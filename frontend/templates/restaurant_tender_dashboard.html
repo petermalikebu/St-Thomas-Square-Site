@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ session['username'] }}</h1>
+    <h2>Food Menu</h2>
+    <ul>
+        {% for food in food_items %}
+        <li>
+            {{ food.name }} - {{ food.status }}
+            <a href="{{ url_for('main.order_food', food_id=food.id) }}">Order</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

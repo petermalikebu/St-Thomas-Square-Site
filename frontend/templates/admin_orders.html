@@ -1,0 +1,138 @@
+{% extends 'dashboard.html' %}
+
+{% block title %}Order Management{% endblock %}
+
+{% block content %}
+<div class="order-management">
+    <h2>Manage Orders</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer Name</th>
+                <th>Food Item</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order['_id'] }}</td>
+                    <td>{{ order['name'] }}</td>
+                    <td>{{ order['food_item'] }}</td>
+                    <td>{{ order['status'] }}</td>
+                    <td>
+                        <form method="POST">
+                            <input type="hidden" name="order_id" value="{{ order['_id'] }}">
+                            <button type="submit" name="action" value="complete" class="btn-complete">Mark as Completed</button>
+                            <button type="submit" name="action" value="cancel" class="btn-cancel">Cancel Order</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f9f9f9;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .order-management {
+        width: 90%;
+        max-width: 1000px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-management h2 {
+        text-align: center;
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    table th, table td {
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+
+    table th {
+        background-color: #f1f1f1;
+        font-weight: bold;
+    }
+
+    table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    table tr:hover {
+        background-color: #f1f1f1;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-complete, .btn-cancel {
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn-complete {
+        background-color: #28a745;
+        color: white;
+        border: none;
+    }
+
+    .btn-complete:hover {
+        background-color: #218838;
+        transform: translateY(-5px);
+        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
+    }
+
+    .btn-cancel {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+    }
+
+    .btn-cancel:hover {
+        background-color: #c82333;
+        transform: translateY(-5px);
+        box-shadow: 0 4px 10px rgba(220, 53, 69, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add interactivity to buttons, e.g., changing button color on hover
+    document.querySelectorAll('.btn-complete, .btn-cancel').forEach(button => {
+        button.addEventListener('mouseenter', () => {
+            button.style.transform = 'scale(1.05)';
+        });
+
+        button.addEventListener('mouseleave', () => {
+            button.style.transform = 'scale(1)';
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

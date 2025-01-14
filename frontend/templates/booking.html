@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>St. Thomas Square Room Booking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+    }
+    .min-h-screen {
+      display: flex;
+      height: 100vh;
+    }
+    .w-1/4 {
+      width: 25%;
+    }
+    .flex-1 {
+      flex: 1;
+    }
+    .bg-[#2c3e50] {
+      background-color: #2c3e50;
+    }
+    .text-white {
+      color: white;
+    }
+    .bg-opacity-80 {
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+    .rounded {
+      border-radius: 8px;
+    }
+    .shadow {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .p-4 {
+      padding: 16px;
+    }
+    .mt-2 {
+      margin-top: 8px;
+    }
+    .mt-4 {
+      margin-top: 16px;
+    }
+    .hover\:bg-[#34495e]:hover {
+      background-color: #34495e;
+    }
+    .cursor-pointer {
+      cursor: pointer;
+    }
+    .bg-blue-500 {
+      background-color: #3498db;
+    }
+    .bg-blue-400 {
+      background-color: #5dade2;
+    }
+    .bg-green-500 {
+      background-color: #2ecc71;
+    }
+    .bg-green-400 {
+      background-color: #58d68d;
+    }
+    .text-[#2c3e50] {
+      color: #2c3e50;
+    }
+    .text-sm {
+      font-size: 14px;
+    }
+    .text-xl {
+      font-size: 20px;
+    }
+    .font-bold {
+      font-weight: bold;
+    }
+    .font-semibold {
+      font-weight: 600;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .grid-cols-1 {
+      grid-template-columns: repeat(1, 1fr);
+    }
+    .md\:grid-cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .md\:grid-cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .space-y-2 {
+      margin-bottom: 8px;
+    }
+    .animate-fade-in {
+      animation: fade-in 2s ease-in-out;
+    }
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    .btn:hover {
+      opacity: 0.8;
+    }
+    .bg-blue-500 {
+      background-color: #3498db;
+      color: white;
+    }
+    .bg-green-500 {
+      background-color: #2ecc71;
+      color: white;
+    }
+    .bg-blue-500:hover {
+      background-color: #2980b9;
+    }
+    .bg-green-500:hover {
+      background-color: #27ae60;
+    }
+
+    /* Make sure the sidebar is always on top */
+    aside {
+      z-index: 10;
+    }
+    header {
+      z-index: 20; /* Ensure header is above sidebar */
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen flex">
+    <aside class="w-1/4 bg-[#2c3e50] text-white p-4">
+      <h2 class="text-2xl font-bold mb-4">Navigation</h2>
+      <ul class="space-y-2">
+        <li class="hover:bg-[#34495e] p-2 rounded cursor-pointer">Home</li>
+        <li class="hover:bg-[#34495e] p-2 rounded cursor-pointer">About Us</li>
+        <li class="hover:bg-[#34495e] p-2 rounded cursor-pointer">Services</li>
+        <li class="hover:bg-[#34495e] p-2 rounded cursor-pointer">Contact</li>
+      </ul>
+    </aside>
+
+    <div class="flex-1 bg-cover bg-center" style="background-image: url('/images/room.jpg')">
+      <header class="sticky top-0 bg-white bg-opacity-80 p-4 shadow">
+        <div class="flex items-center justify-between">
+          <img src="/images/logo.png" alt="St. Thomas Square Logo" class="h-10" />
+          <h1 class="text-2xl font-bold font-arial text-[#2c3e50]">St. Thomas Square Room Booking</h1>
+        </div>
+      </header>
+
+      <main class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white bg-opacity-80 p-4 rounded shadow">
+            <h2 class="text-xl font-semibold">Standard Room</h2>
+            <p class="text-sm text-[#7f8c8d]">K50,000 per night</p>
+            <button class="btn bg-blue-500 hover:bg-blue-400" onclick="selectRoom('Standard Room', 50000)">Select</button>
+          </div>
+          <div class="bg-white bg-opacity-80 p-4 rounded shadow">
+            <h2 class="text-xl font-semibold">Deluxe Room</h2>
+            <p class="text-sm text-[#7f8c8d]">K75,000 per night</p>
+            <button class="btn bg-blue-500 hover:bg-blue-400" onclick="selectRoom('Deluxe Room', 75000)">Select</button>
+          </div>
+          <div class="bg-white bg-opacity-80 p-4 rounded shadow">
+            <h2 class="text-xl font-semibold">Suite</h2>
+            <p class="text-sm text-[#7f8c8d]">K120,000 per night</p>
+            <button class="btn bg-blue-500 hover:bg-blue-400" onclick="selectRoom('Suite', 120000)">Select</button>
+          </div>
+        </div>
+
+        <div id="booking-form" class="mt-6 bg-white bg-opacity-80 p-4 rounded shadow hidden">
+          <h2 class="text-xl font-bold mb-4" id="room-name"></h2>
+          <form id="bookingForm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" id="name" placeholder="Your Name" class="p-2 border border-gray-300 rounded" required />
+              <input type="tel" id="phone" placeholder="Phone Number" class="p-2 border border-gray-300 rounded" required />
+              <input type="date" id="arrivalDate" class="p-2 border border-gray-300 rounded" required />
+              <select id="duration" class="p-2 border border-gray-300 rounded">
+                <option value="1">1 night</option>
+                <option value="2">2 nights</option>
+                <option value="3">3 nights</option>
+                <option value="4">4 nights</option>
+                <option value="5">5 nights</option>
+              </select>
+            </div>
+            <button type="submit" class="btn bg-green-500 hover:bg-green-400 mt-4">Submit Booking</button>
+          </form>
+        </div>
+
+        <div id="confirmation" class="mt-6 bg-white bg-opacity-80 p-4 rounded shadow hidden">
+          <h2 class="text-xl font-bold mb-4">Booking Confirmation</h2>
+          <p id="confirmation-name"></p>
+          <p id="confirmation-phone"></p>
+          <p id="confirmation-arrivalDate"></p>
+          <p id="confirmation-duration"></p>
+          <p id="confirmation-room"></p>
+          <p id="confirmation-totalPrice"></p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    let selectedRoom = null;
+    let bookingDetails = {
+      name: "",
+      phone: "",
+      arrivalDate: "",
+      duration: 1,
+    };
+
+    function selectRoom(roomName, price) {
+      selectedRoom = { name: roomName, price: price };
+      document.getElementById("room-name").innerText = roomName;
+      document.getElementById("booking-form").classList.remove("hidden");
+    }
+
+    document.getElementById("bookingForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      bookingDetails.name = document.getElementById("name").value;
+      bookingDetails.phone = document.getElementById("phone").value;
+      bookingDetails.arrivalDate = document.getElementById("arrivalDate").value;
+      bookingDetails.duration = document.getElementById("duration").value;
+
+      const totalPrice = selectedRoom.price * bookingDetails.duration;
+      document.getElementById("confirmation-name").innerText = `Name: ${bookingDetails.name}`;
+      document.getElementById("confirmation-phone").innerText = `Phone: ${bookingDetails.phone}`;
+      document.getElementById("confirmation-arrivalDate").innerText = `Arrival Date: ${bookingDetails.arrivalDate}`;
+      document.getElementById("confirmation-duration").innerText = `Duration: ${bookingDetails.duration} night(s)`;
+      document.getElementById("confirmation-room").innerText = `Room Type: ${selectedRoom.name}`;
+      document.getElementById("confirmation-totalPrice").innerText = `Total Price: K${totalPrice}`;
+
+      document.getElementById("booking-form").classList.add("hidden");
+      document.getElementById("confirmation").classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>

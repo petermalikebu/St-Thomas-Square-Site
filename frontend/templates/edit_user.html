@@ -1,0 +1,26 @@
+{% extends 'dashboard.html' %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Edit User</h2>
+
+    <!-- Edit User Form -->
+    <form action="{{ url_for('main.update_user', user_id=user.id) }}" method="POST">
+        <h3>Edit User Details</h3>
+        <input type="text" name="full_name" value="{{ user.full_name }}" placeholder="Full Name" required>
+        <input type="email" name="email" value="{{ user.email }}" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password (Leave blank to keep current)">
+        <input type="text" name="id_number" value="{{ user.id_number }}" placeholder="ID Number" required>
+        <input type="tel" name="phone" value="{{ user.phone }}" placeholder="Phone Number" required>
+        <select name="role" required>
+            <option value="bartender" {% if user.role == 'bartender' %}selected{% endif %}>Bartender</option>
+            <option value="chef" {% if user.role == 'chef' %}selected{% endif %}>Chef</option>
+            <option value="event_planner" {% if user.role == 'event_planner' %}selected{% endif %}>Event Planner</option>
+            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Update User</button>
+    </form>
+</div>
+{% endblock %}

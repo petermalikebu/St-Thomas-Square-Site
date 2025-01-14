@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<!--suppress ALL -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bartender Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background-color: #e8f1f5;
+            display: flex;
+            color: #333;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: #1a202c;
+            color: #fff;
+            padding: 30px 20px;
+            height: 100vh;
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h3 {
+            font-weight: 600;
+            color: #ff7f50;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .sidebar p {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .sidebar button {
+            background-color: #ff7f50;
+            border: none;
+            padding: 12px 15px;
+            margin: 10px 0;
+            width: 100%;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .sidebar button:hover {
+            background-color: #e0663c;
+            transform: scale(1.05);
+        }
+
+        .sidebar button:active {
+            transform: scale(1);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            padding: 40px;
+            flex-grow: 1;
+        }
+
+        .main-content h4 {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        .beer-list ul, .selected-beers ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .beer-list ul li, .selected-beers ul li {
+            background: #ffffff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-beer {
+            background-color: #38b6ff;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .add-beer:hover {
+            background-color: #0077cc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table th {
+            background-color: #1a202c;
+            color: white;
+            padding: 15px;
+        }
+
+        table td {
+            padding: 15px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                box-shadow: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .sidebar button {
+                padding: 10px;
+            }
+        }
+<!-- Bartender Dashboard -->
+</style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h3>Bartender Dashboard</h3>
+        <p>Welcome, {{ session['username'] }}</p>
+        <button onclick="showWarehouse()">View Warehouse Beers</button>
+        <button onclick="showSelected()">My Selected Beers</button>
+        <button onclick="recordSales()">Record Sales</button>
+        <form action="{{ url_for('main.logout') }}" method="POST">
+            <button type="submit" style="background-color: #dc3545;">Logout</button>
+        </form>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Warehouse View -->
+        <div id="warehouse" class="beer-list">
+            <h4>Current Bar Stock</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Beer Name</th>
+                        <th>Type</th>
+                        <th>Price per Bottle</th>
+                        <th>Quantity</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for beer in beers %}
+                    <tr>
+                        <td>{{ beer.name }}</td>
+                        <td>{{ beer.type }}</td>
+                        <td>${{ beer.price_per_bottle }}</td>
+                        <td>{{ beer.quantity }}</td>
+                        <td>${{ beer.quantity * beer.price_per_bottle }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Selected Beers View -->
+        <div id="selected" class="selected-beers" style="display: none;">
+            <h4>Select Beers for Sale</h4>
+            <form action="{{ url_for('main.bartender_select_beer') }}" method="POST">
+                <label for="beer_id">Beer:</label>
+                <select name="beer_id" id="beer_id" class="form-control">
+                    {% for beer in beers %}
+                    <option value="{{ beer.id }}">{{ beer.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="quantity">Quantity:</label>
+                <input type="number" name="quantity" id="quantity" class="form-control" min="1" required>
+
+                <button type="submit" class="btn btn-primary mt-3">Select Beer</button>
+            </form>
+
+            <h4>Your Selected Beers</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Beer Name</th>
+                        <th>Quantity</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for selected_beer in bartender_stocks %}
+                    <tr>
+                        <td>{{ selected_beer.beer.name }}</td>
+                        <td>{{ selected_beer.quantity }}</td>
+                        <td>${{ selected_beer.total_value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- Sales Form -->
+        <div id="sales-form" style="display: none;">
+            <h4>Record Daily Sales</h4>
+            <form action="{{ url_for('main.record_sales') }}" method="POST">
+                <label for="beer_id">Beer:</label>
+                <select name="beer_id" id="beer_id" class="form-control">
+                    {% for beer in beers %}
+                    <option value="{{ beer.id }}">{{ beer.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="quantity_sold">Quantity Sold:</label>
+                <input type="number" name="quantity_sold" id="quantity_sold" class="form-control" required>
+
+                <button type="submit" class="btn btn-primary btn-block mt-3">Submit Sales</button>
+            </form>
+        </div>
+
+        <!-- Sales Transactions -->
+        <div id="sales-transactions" class="beer-list">
+            <h4>Sales Transactions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Beer Name</th>
+                        <th>Quantity Sold</th>
+                        <th>Total Revenue</th>
+                        <th>Profit/Shortage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.beer.name }}</td>
+                        <td>{{ transaction.quantity_sold }}</td>
+                        <td>${{ transaction.total_price }}</td>
+                        <td>
+                            {% if transaction.profit_or_shortage %}
+                                ${{ transaction.profit_or_shortage }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 Bar Management System. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript -->
+   <script>
+        function showWarehouse() {
+            // Hide all sections and make warehouse visible
+            document.getElementById('warehouse').classList.add('visible');
+            document.getElementById('selected').classList.add('hidden');
+            document.getElementById('sales-form').classList.add('hidden');
+        }
+
+        function showSelected() {
+            // Hide all sections and make selected visible
+            document.getElementById('warehouse').classList.add('hidden');
+            document.getElementById('selected').classList.add('visible');
+            document.getElementById('sales-form').classList.add('hidden');
+        }
+
+        function recordSales() {
+            // Hide all sections and make sales form visible
+            document.getElementById('warehouse').classList.add('hidden');
+            document.getElementById('selected').classList.add('hidden');
+            document.getElementById('sales-form').classList.add('visible');
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+<form method="POST">
+    <label for="beer_id">Select Beer:</label>
+    <select name="beer_id">
+        {% for beer in beers %}
+        <option value="{{ beer.id }}">{{ beer.name }} ({{ beer.quantity }} available)</option>
+        {% endfor %}
+    </select>
+    <label for="quantity_sold">Quantity:</label>
+    <input type="number" name="quantity_sold" required>
+    <button type="submit">Sell Beer</button>
+</form>

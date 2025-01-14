@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}St. Thomas Square{% endblock %}</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <style>
+        /* General Page Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #f7f7f7, #e0e0e0);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #007bff;
+            color: #fff;
+            padding-top: 30px;
+            position: fixed;
+            height: 100%;
+            top: 0;
+            left: 0;
+            text-align: center;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            padding: 15px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #0056b3;
+        }
+
+        .sidebar .logo img {
+            height: 50px;
+            margin-bottom: 20px;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            flex-grow: 1;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .header {
+            display: none;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .flash-messages li {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px;
+            background-color: #f44336;
+            color: #fff;
+            border-radius: 5px;
+        }
+
+        /* Footer Styles */
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #333;
+            color: #fff;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        /* Mobile responsiveness */
+        @media screen and (max-width: 600px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding-top: 10px;
+            }
+
+            .sidebar a {
+                font-size: 1rem;
+                padding: 10px;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 10px;
+            }
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: url('{{ url_for("static", filename="images/hero-bg.jpg") }}') no-repeat center center;
+            background-size: cover;
+            height: 400px;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        .hero-section h1 {
+            font-size: 3rem;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+
+        .hero-btn {
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .hero-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Story Section */
+        .story-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .story-section h2 {
+            color: #333;
+        }
+
+        .story-section p {
+            font-size: 1.2rem;
+            color: #555;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
+        </div>
+        <a href="{{ url_for('main.index') }}">Home</a>
+        <a href="{{ url_for('main.login') }}">Login</a>
+        <a href="{{ url_for('main.signup') }}">Sign Up</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}
+            <div class="hero-section">
+                <div>
+                    <h1>Welcome to St. Thomas Square</h1>
+                    <p>Your one-stop destination for a perfect stay, great food, and fun events.</p>
+                    <a href="{{ url_for('main.signup') }}" class="hero-btn">Join Us Now</a>
+                </div>
+            </div>
+
+            <!-- Story Section -->
+            <div class="story-section">
+                <h2>Our Story</h2>
+                <p>Welcome to St. Thomas Square, where every moment is a chance to relax, rejuvenate, and make memories. Nestled in the heart of the city, St. Thomas Square is not just a place, it’s an experience. Our journey began with a dream to create a space that blends luxury with comfort, offering visitors a sanctuary from the hustle and bustle of daily life. Whether you're here for business or pleasure, we provide an environment that caters to your needs with world-class amenities, top-notch dining, and an array of exciting events that bring people together.</p>
+                <p>Our philosophy is simple: offer the highest level of service, the best food, and an unforgettable experience. From the moment you step through our doors, you are welcomed like family. Explore our exquisite rooms, indulge in our culinary delights, or attend one of our signature events that bring people together in the spirit of fun and relaxation. At St. Thomas Square, we don’t just offer accommodations; we offer memories that will last a lifetime.</p>
+                <p>Come and experience the magic of St. Thomas Square – where luxury meets comfort, and every guest is treated like royalty. We look forward to welcoming you!</p>
+            </div>
+        {% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2024 St. Thomas Square. All rights reserved.</p>
+    </footer>
+
+    <!-- Bootstrap JS and Popper -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>

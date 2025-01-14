@@ -1,0 +1,53 @@
+{% extends 'dashboard.html' %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Manage Users</h2>
+
+    <!-- Add User Form -->
+    <form action="{{ url_for('main.add_user') }}" method="POST">
+        <h3>Add a New User</h3>
+        <input type="text" name="full_name" placeholder="Full Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="text" name="id_number" placeholder="ID Number" required>
+        <input type="tel" name="phone" placeholder="Phone Number" required>
+        <select name="role" required>
+            <option value="bartender">Bartender</option>
+            <option value="chef">Chef</option>
+            <option value="event_planner">Event Planner</option>
+            <option value="admin">Admin</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Add User</button>
+    </form>
+
+    <!-- Existing Users Table -->
+    <h3>Existing Users</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role }}</td>
+                <td>
+                    <form action="{{ url_for('main.delete_user', user_id=user.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

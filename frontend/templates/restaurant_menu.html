@@ -1,0 +1,124 @@
+{% extends 'dashboard.html' %}
+
+{% block title %}Restaurant Menu{% endblock %}
+
+{% block content %}
+<div class="restaurant-menu">
+    <h2>Our Restaurant Menu</h2>
+
+    {% if is_open %}
+        <form method="POST" action="{{ url_for('main.place_order') }}" class="order-form" novalidate>
+            <div class="input-group">
+                <label for="name">Your Name</label>
+                <input type="text" name="name" id="name" required placeholder="Enter your full name" aria-label="Your full name">
+            </div>
+
+            <div class="input-group">
+                <label for="food_item">Choose Food Item</label>
+                <select name="food_item" id="food_item" required aria-label="Choose a food item">
+                    <option value="" disabled selected>Select a dish</option>
+                    {% for item in menu['items'] %}
+                        <option value="{{ item }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="pickup_time">Pickup Time (between 9:00 AM and 9:00 PM)</label>
+                <input type="time" name="pickup_time" id="pickup_time" required aria-label="Pickup time" min="09:00" max="21:00">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Place Order</button>
+        </form>
+    {% else %}
+        <p>The restaurant is currently closed. Please visit us between 9:00 AM and 9:00 PM.</p>
+    {% endif %}
+</div>
+
+<style>
+    /* General page styling */
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f6f9;
+        color: #333;
+        margin: 0;
+        padding: 0;
+    }
+
+    .restaurant-menu {
+        width: 100%;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 40px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .restaurant-menu h2 {
+        font-size: 1.8rem;
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group label {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .input-group input,
+    .input-group select {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+        color: #333;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        transition: border-color 0.3s ease;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+        outline: none;
+        border-color: #007bff;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* Mobile responsiveness */
+    @media screen and (max-width: 600px) {
+        .restaurant-menu {
+            padding: 30px;
+        }
+
+        .restaurant-menu h2 {
+            font-size: 1.5rem;
+        }
+
+        .restaurant-menu label, .restaurant-menu input, .restaurant-menu select, .restaurant-menu button {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}

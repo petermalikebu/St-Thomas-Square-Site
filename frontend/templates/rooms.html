@@ -1,0 +1,153 @@
+{% extends 'dashboard.html' %}
+
+{% block title %}Rooms{% endblock %}
+
+{% block content %}
+<div class="room-list">
+    <h2>Available Rooms</h2>
+
+    {% for room in rooms %}
+        <div class="room">
+            <p><strong>Room ID:</strong> {{ room['_id'] }}</p>
+            <p><strong>Price:</strong> {{ room['price'] }} per hour/day</p>
+            <p><strong>Status:</strong> {{ room['status'] }}</p>
+
+            {% if room['status'] == 'available' %}
+                <form method="POST" action="{{ url_for('main.book_room') }}" class="booking-form" novalidate>
+                    <div class="input-group">
+                        <label for="name">Your Name</label>
+                        <input type="text" name="name" id="name" required placeholder="Enter your full name" aria-label="Your full name">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" name="phone" id="phone" required pattern="^\+?[1-9]\d{1,14}$" placeholder="Enter your phone number" aria-label="Your phone number">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="arrival_date">Arrival Date</label>
+                        <input type="date" name="arrival_date" id="arrival_date" required aria-label="Arrival date">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="hours">Duration (in hours)</label>
+                        <input type="number" name="hours" id="hours" required min="1" placeholder="Enter duration in hours" aria-label="Booking duration">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Book Now</button>
+                </form>
+            {% else %}
+                <p>Room is currently booked.</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+    /* General page styling */
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f6f9;
+        color: #333;
+        margin: 0;
+        padding: 0;
+    }
+
+    .room-list {
+        width: 100%;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .room-list h2 {
+        font-size: 1.8rem;
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .room {
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .room p {
+        margin-bottom: 10px;
+        font-size: 1rem;
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group label {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+        color: #333;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        transition: border-color 0.3s ease;
+    }
+
+    .input-group input:focus {
+        outline: none;
+        border-color: #007bff;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* Mobile responsiveness */
+    @media screen and (max-width: 600px) {
+        .room-list {
+            padding: 20px;
+        }
+
+        .room-list h2 {
+            font-size: 1.5rem;
+        }
+
+        .room-list p {
+            font-size: 0.9rem;
+        }
+
+        .room {
+            padding: 15px;
+        }
+
+        .input-group input,
+        .btn {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+{% endblock %}

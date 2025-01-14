@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom Internal CSS */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: #343a40;
+            color: white;
+            width: 250px;
+            padding-top: 20px;
+            position: fixed;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .sidebar .logo img {
+            width: 100px;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .sidebar h3 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-links {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .sidebar-links li {
+            margin: 15px 0;
+        }
+
+        .sidebar-links a {
+            color: #ccc;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        .sidebar-links a:hover {
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .logout-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .info-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        .info-table th, .info-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .info-table th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .info-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        h2, h3 {
+            color: #333;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
+            </div>
+            <h3>Admin Dashboard</h3>
+            <ul class="sidebar-links">
+                <li><a href="{{ url_for('main.dashboard') }}" class="text-white">Go to Dashboard</a></li>
+                <li><a href="{{ url_for('main.admin_dashboard') }}" class="text-white">Admin Dashboard</a></li>
+                <li><a href="{{ url_for('main.admin_bar_stock') }}" class="text-white">Bar Stock</a></li>
+            </ul>
+            <button class="logout-button">Logout</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="container mt-4">
+                <h1>Admin Dashboard</h1>
+                <hr>
+                <!-- Current Bar Stock Table -->
+                <h3>Current Bar Stock</h3>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Beer Name</th>
+                            <th>Type</th>
+                            <th>Price per Bottle</th>
+                            <th>Quantity</th>
+                            <th>Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for beer in beers %}
+                        <tr>
+                            <td>{{ beer.name }}</td>
+                            <td>{{ beer.beer_type }}</td>
+                            <td>{{ beer.price_per_bottle }}</td>
+                            <td>{{ beer.quantity }}</td>
+                            <td>{{ beer.total_value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Beer Remaining Info -->
+                <h3>Beer Remaining (Total)</h3>
+                <p>Total Beer Remaining: {{ beer_remaining }} L</p>
+
+                <!-- Link to Admin Bar Stock -->
+                <a href="{{ url_for('main.admin_bar_stock') }}" class="btn btn-primary mt-4">Go to Bar Stock Management</a>
+                <a href="{{ url_for('main.download_report') }}" class="btn btn-success mt-3">Download Bartender Report</a>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

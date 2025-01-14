@@ -1,0 +1,130 @@
+{% extends 'dashboard.html' %}
+
+{% block title %}Bar Events{% endblock %}
+
+{% block content %}
+<div class="bar-menu">
+    <h2>Bar Events</h2>
+
+    {% for event in events %}
+        <div class="event">
+            <h3>{{ event['name'] }}</h3>
+            <p>{{ event['description'] }}</p>
+            <p><strong>Date:</strong> {{ event['date'] }}</p>
+        </div>
+    {% endfor %}
+
+    <h3>Bartender on Duty</h3>
+    {% if bartender %}
+        <p class="bartender-name">{{ bartender['name'] }}</p>
+    {% else %}
+        <p>No bartender on duty currently.</p>
+    {% endif %}
+
+    <!-- Link to Admin Dashboard -->
+    <div class="admin-dashboard-link">
+        <a href="{{ url_for('main.admin_dashboard') }}">Go to Admin Dashboard</a>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f7f7f7;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .bar-menu {
+        width: 80%;
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .bar-menu h2 {
+        text-align: center;
+        color: #333;
+    }
+
+    .event {
+        background-color: #f1f1f1;
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .event h3 {
+        color: #007bff;
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .event p {
+        color: #555;
+        font-size: 1rem;
+        margin: 5px 0;
+    }
+
+    .event strong {
+        color: #333;
+    }
+
+    .bartender-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    .bartender-name::before {
+        content: "🍸 ";
+        font-size: 1.5rem;
+    }
+
+    .bar-menu p {
+        text-align: center;
+        color: #666;
+        font-size: 1rem;
+    }
+
+    .admin-dashboard-link {
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    .admin-dashboard-link a {
+        font-size: 1.2rem;
+        color: #007bff;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .admin-dashboard-link a:hover {
+        color: #0056b3;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Event section hover effect
+    const events = document.querySelectorAll('.event');
+    events.forEach(event => {
+        event.addEventListener('mouseenter', () => {
+            event.style.transform = 'scale(1.05)';
+            event.style.boxShadow = '0 4px 15px rgba(0, 123, 255, 0.2)';
+        });
+
+        event.addEventListener('mouseleave', () => {
+            event.style.transform = 'scale(1)';
+            event.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

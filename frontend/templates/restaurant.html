@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Thomas Square Kitchen</title>
+    <style>
+        /* Basic styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .min-h-screen {
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #34495e;
+            margin-top: 0.5rem;
+        }
+
+        /* Layout */
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 1rem;
+        }
+
+        .category, .menu, .cart {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Category Section */
+        .category {
+            width: 100%;
+            max-width: 250px;
+            margin-bottom: 1rem;
+        }
+
+        .category button {
+            width: 100%;
+            padding: 10px;
+            text-align: left;
+            background-color: white;
+            border: 1px solid #ccc;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+
+        .category button.active {
+            background-color: #3498db;
+            color: white;
+        }
+
+        /* Menu Section */
+        .menu {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .menu div {
+            margin-bottom: 1rem;
+        }
+
+        .menu h3 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .menu p {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .menu button {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Cart Section */
+        .cart {
+            width: 100%;
+            max-width: 250px;
+        }
+
+        .cart h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .cart .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .cart .item button {
+            color: #e74c3c;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .cart .total {
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        .cart button.checkout {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 1024px) {
+            .category, .menu, .cart {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .category button {
+                font-size: 0.9rem;
+            }
+
+            .menu h3 {
+                font-size: 1rem;
+            }
+
+            .cart button.checkout {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="min-h-screen">
+    <header>
+        <h1>St. Thomas Square Kitchen</h1>
+        <p>Welcome to our Food Ordering System</p>
+    </header>
+
+    <div class="flex">
+        <!-- Category Section -->
+         <div class="category">
+            <h2>Categories</h2>
+            <button class="category-button" onclick="changeCategory('Fish')">Fish</button>
+            <button class="category-button" onclick="changeCategory('Chicken')">Chicken</button>
+            <button class="category-button" onclick="changeCategory('Beef')">Beef</button>
+            <button class="category-button" onclick="changeCategory('Pork')">Pork</button>
+            <button class="category-button" onclick="changeCategory('Snacks')">Snacks</button>
+            <button class="category-button" onclick="changeCategory('Vegetarian')">Vegetarian</button>
+
+            <!-- Home Button -->
+            <a href="{{ url_for('main.home') }}" class="home-button">
+                <button class="category-button">Home</button>
+            </a>
+        </div>
+
+        <!-- Menu Section -->
+        <div class="menu" id="menu">
+            <h2>Fish Menu</h2>
+            <div class="food-item">
+                <h3>Grilled Salmon</h3>
+                <p>$20</p>
+                <button onclick="addToCart('Grilled Salmon', 20)">Add to Cart</button>
+            </div>
+            <div class="food-item">
+                <h3>Fish Tacos</h3>
+                <p>$15</p>
+                <button onclick="addToCart('Fish Tacos', 15)">Add to Cart</button>
+            </div>
+        </div>
+
+        <!-- Cart Section -->
+        <div class="cart">
+            <h2>Shopping Cart</h2>
+            <div id="cart-items"></div>
+            <p class="total">Total: $<span id="total">0</span></p>
+            <button class="checkout" onclick="checkout()">Proceed to Checkout</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedCategory = 'Fish';
+    const categories = {
+        Fish: [
+            { name: 'Grilled Salmon', price: 20 },
+            { name: 'Fish Tacos', price: 15 }
+        ],
+        Chicken: [
+            { name: 'Chicken Parmesan', price: 18 },
+            { name: 'Chicken Wings', price: 12 }
+        ],
+        Beef: [
+            { name: 'Beef Burger', price: 15 },
+            { name: 'Steak', price: 25 }
+        ],
+        Pork: [
+            { name: 'BBQ Ribs', price: 22 },
+            { name: 'Pork Chops', price: 18 }
+        ],
+        Snacks: [
+            { name: 'Nachos', price: 8 },
+            { name: 'French Fries', price: 5 }
+        ],
+        Vegetarian: [
+            { name: 'Veggie Burger', price: 12 },
+            { name: 'Grilled Vegetables', price: 10 }
+        ]
+    };
+
+    const cart = [];
+
+    function changeCategory(category) {
+        selectedCategory = category;
+        document.querySelectorAll('.category-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        document.querySelector(`.category-button:nth-child(${categories[selectedCategory].length + 1})`).classList.add('active');
+        displayMenu();
+    }
+
+    function displayMenu() {
+        const menuElement = document.getElementById('menu');
+        menuElement.innerHTML = `<h2>${selectedCategory} Menu</h2>`;
+
+        categories[selectedCategory].forEach(item => {
+            const foodItem = document.createElement('div');
+            foodItem.classList.add('food-item');
+            foodItem.innerHTML = `
+                <h3>${item.name}</h3>
+                <p>$${item.price}</p>
+                <button onclick="addToCart('${item.name}', ${item.price})">Add to Cart</button>
+            `;
+            menuElement.appendChild(foodItem);
+        });
+    }
+
+    function addToCart(name, price) {
+        cart.push({ name, price });
+        updateCart();
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCart();
+    }
+
+    function updateCart() {
+        const cartItems = document.getElementById('cart-items');
+        cartItems.innerHTML = '';
+
+        let total = 0;
+        cart.forEach((item, index) => {
+            total += item.price;
+            const cartItem = document.createElement('div');
+            cartItem.classList.add('item');
+            cartItem.innerHTML = `
+                <span>${item.name} - $${item.price}</span>
+                <button onclick="removeFromCart(${index})">Remove</button>
+            `;
+            cartItems.appendChild(cartItem);
+        });
+
+        document.getElementById('total').innerText = total;
+    }
+
+    function checkout() {
+        alert('Order placed successfully!');
+        cart.length = 0;
+        updateCart();
+    }
+
+    // Initialize the page with the first category
+    changeCategory(selectedCategory);
+</script>
+
+</body>
+</html>
