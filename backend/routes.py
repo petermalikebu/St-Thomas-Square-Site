@@ -1,20 +1,20 @@
+import csv
 import os
 from datetime import datetime
 from functools import wraps
 from io import BytesIO
-
+from io import StringIO
 import pandas as pd
 from flask import Blueprint
 from flask import flash, redirect, request, session, url_for
 from flask import render_template
 from flask import send_file
-from flask_login import current_user
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
-
 from backend.app import login_manager  # Import the login_manager
+from backend.models import BarStock
 from backend.models import BartenderStock
 from backend.models import BartenderTransaction
 from backend.models import Beer  # Adjust the path based on your app structure
@@ -22,9 +22,11 @@ from backend.models import BeerStock
 from backend.models import Event
 from backend.models import Room
 from backend.models import User, db  # Import models and db from the correct location
+from flask_login import current_user
+
 
 main = Blueprint('main', __name__)
-report_dir = "reports"  # Directory to save reports
+report_dir = os.path.join(os.getcwd(), 'reports')
 
 
 def login_required(f):
@@ -74,7 +76,6 @@ def get_rooms_available():
     return len(available_rooms)
 
 
-
 @main.route('/')
 def home():
     return render_template('st_thomas.html')
@@ -98,6 +99,7 @@ def restaurant():
 def booking():
     # This will render the HTML page you've provided in the 'templates' folder
     return render_template('booking.html')
+
 
 
 @main.route('/signup', methods=['GET', 'POST'])
@@ -458,20 +460,25 @@ def place_order():
 @main.route('/admin_dashboard')
 @login_required
 def admin_dashboard():
+    # Retrieve all beer stock data from the database
     beers = BeerStock.query.all()
     return render_template("admin_dashboard.html", beers=beers)
+    return render_template('admin_dashboard.html', transactions=transactions)
 
 @main.route('/admin_bar_stock', methods=['GET', 'POST'])
 @login_required
 def admin_bar_stock():
     if request.method == 'POST':
+        # Retrieve form data
         beer_name = request.form['name']
         beer_type = request.form['type']
         price_per_bottle = float(request.form['price_per_bottle'])
         quantity = int(request.form['quantity'])
 
+        # Calculate total value
         total_value = price_per_bottle * quantity
 
+        # Create a new BeerStock instance and add it to the database
         new_beer = BeerStock(
             name=beer_name,
             beer_type=beer_type,
@@ -494,9 +501,11 @@ def bar_dashboard():
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
+    # Retrieve bar events and other necessary information
     events = BarEvent.query.all()
-    opening_balance = BeerStock.query.first()
+    opening_balance = BarStock.query.first()  # Retrieve opening balance or None if not found
     return render_template('bar_dashboard.html', events=events, opening_balance=opening_balance)
+
 
 @main.route('/bartender_dashboard')
 @login_required
@@ -505,7 +514,10 @@ def bartender_dashboard():
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
+    # Retrieve current bar stock from BeerStock table
     beers = BeerStock.query.all()
+
+    # Retrieve bartender's specific stock (if any exists)
     bartender_stocks = BartenderStock.query.filter_by(bartender_id=session['user_id']).all()
 
     return render_template(
@@ -525,6 +537,7 @@ def bartender_select_beer():
         flash("Insufficient stock in the warehouse!", "error")
         return redirect(url_for('main.bartender_dashboard'))
 
+    # Update the warehouse stock
     beer.quantity -= quantity
     db.session.commit()
 
@@ -583,52 +596,72 @@ def sell_beer():
             })
             flash("Insufficient stock to sell the requested quantity!", "error")
 
+    # Re-fetch updated data
     updated_bartender_stocks = BartenderStock.query.filter_by(bartender_id=session['user_id']).all()
     sales_transactions = BartenderTransaction.query.filter_by(bartender_id=session['user_id']).all()
 
+    # Pass updated data to template
     return render_template('sell_beer.html', bartender_stocks=updated_bartender_stocks, shortages=shortages, transactions=sales_transactions)
 
 
+
+# Global transactions list to store all sales records
+transactions = []
+
+
 @main.route('/record_sales', methods=['POST'])
+@login_required
 def record_sales():
+    if not current_user.is_authenticated:
+        flash('You need to log in to record sales!', 'danger')
+        return render_template('bartender_dashboard.html', beers=BeerStock.query.all())
+
+    # Get the selected beer and quantity sold from the form
     beer_id = request.form.get('beer_id')
-    quantity_sold = int(request.form.get('quantity_sold'))
+    quantity_sold = request.form.get('quantity_sold')
 
-    # Get the selected beer by bartender
-    selected_beer = BartenderStock.query.filter_by(beer_id=beer_id, bartender_id=session['bartender_id']).first()
+    try:
+        quantity_sold = int(quantity_sold)
+    except ValueError:
+        flash('Invalid quantity sold value!', 'danger')
+        return render_template('bartender_dashboard.html', beers=BeerStock.query.all())
 
-    if selected_beer:
-        if selected_beer.quantity >= quantity_sold:
-            # Subtract the sold quantity from the bartender's stock
-            selected_beer.quantity -= quantity_sold
-            selected_beer.total_value = selected_beer.quantity * selected_beer.beer.price_per_bottle
+    selected_beer = BartenderStock.query.filter_by(bartender_id=current_user.id, beer_id=beer_id).first()
 
-            # Create a new sales transaction
-            transaction = SaleTransaction(
-                beer_id=beer_id,
-                quantity_sold=quantity_sold,
-                total_price=quantity_sold * selected_beer.beer.price_per_bottle,
-                profit_or_shortage=calculate_profit_or_shortage(beer_id, quantity_sold)  # Add logic for profit/shortage
-            )
+    if not selected_beer or selected_beer.quantity < quantity_sold:
+        flash(f'Not enough stock for {selected_beer.beer.name}!', 'danger')
+        return render_template('bartender_dashboard.html', beers=BeerStock.query.all())
 
-            db.session.add(transaction)
-            db.session.commit()
+    total_revenue = quantity_sold * selected_beer.beer.price_per_bottle
+    profit = total_revenue  # Adjust as needed
 
-            # Update bartender's stock
-            db.session.commit()
-            return redirect(url_for('main.bartender_dashboard'))
-        else:
-            flash("Not enough stock available to complete this sale.")
-            return redirect(url_for('main.bartender_dashboard'))
+    selected_beer.quantity -= quantity_sold
+    db.session.commit()
 
-    flash("Beer not found in selected beers.")
-    return redirect(url_for('main.bartender_dashboard'))
+    transaction = BartenderTransaction(
+        bartender_id=current_user.id,
+        beer_id=selected_beer.beer.id,
+        quantity_sold=quantity_sold,
+        total_price=total_revenue,
+        transaction_date=datetime.utcnow()
+    )
+
+    db.session.add(transaction)
+    db.session.commit()
+
+    flash('Sales recorded successfully!', 'success')
+
+    updated_beers = BeerStock.query.all()
+
+    return render_template('bartender_dashboard.html', beers=updated_beers, beer_id=beer_id)
 
 
 
 def generate_report():
+    # Query all transactions from the database
     transactions = BartenderTransaction.query.filter_by(bartender_id=session['user_id']).all()
 
+    # Ensure the reports directory exists
     if not os.path.exists(report_dir):
         os.makedirs(report_dir)
 
@@ -637,40 +670,75 @@ def generate_report():
     c.drawString(100, 750, "Bartender Transactions Report")
     c.drawString(100, 730, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
+    # Add table headers
     y = 700
     c.drawString(100, y, "Beer Name")
     c.drawString(250, y, "Quantity")
     c.drawString(350, y, "Total Revenue")
     c.drawString(450, y, "Profit/Shortage")
 
+    # Populate the table with transaction data
     y -= 20
     for transaction in transactions:
         c.drawString(100, y, transaction.beer.name)
         c.drawString(250, y, str(transaction.quantity_sold))
         c.drawString(350, y, f"${transaction.total_price:.2f}")
+        c.drawString(450, y, f"${transaction.profit_or_shortage:.2f}")
         y -= 20
 
     c.save()
 
+
+
+
+# Route to download the bartender report
 @main.route('/download_report')
 @login_required
 def download_report():
+    # Ensure the file exists before attempting to send it
     filename = os.path.join(report_dir, 'bartender_report.pdf')
 
     if not os.path.exists(filename):
-        return "Report file not found", 404
+        return "Report file not found", 404  # Return 404 if file is not found
 
+    # Send the file as an attachment
     return send_file(filename, as_attachment=True)
 
+
+# Route to download the shortage report
 @main.route('/admin/download_shortage_report')
 @login_required
 def download_shortage_report():
+    # Query for shortage data
     shortages = BartenderTransaction.query.filter(BartenderTransaction.shortage > 0).all()
 
+    # Check if there are shortages
     if not shortages:
         return "No shortage data available", 404
 
-    csv_output = String
+    # Generate CSV content
+    csv_output = StringIO()
+    writer = csv.writer(csv_output)
+    writer.writerow(["Beer Name", "Shortage Quantity", "Loss Amount", "Bartender ID"])
+
+    for shortage in shortages:
+        writer.writerow([
+            shortage.beer.name,
+            shortage.shortage_quantity,
+            shortage.loss,
+            shortage.bartender_id
+        ])
+
+    # Seek to the beginning of the CSV output for reading
+    csv_output.seek(0)
+
+    # Send the CSV content as a downloadable file
+    return send_file(
+        StringIO(csv_output.read()),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="shortage_report.csv"
+    )
 
 
 @main.route('/event_planner_dashboard')

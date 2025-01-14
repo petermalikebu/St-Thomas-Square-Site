@@ -302,29 +302,25 @@
     </footer>
 
     <!-- JavaScript -->
-   <script>
+    <script>
         function showWarehouse() {
-            // Hide all sections and make warehouse visible
-            document.getElementById('warehouse').classList.add('visible');
-            document.getElementById('selected').classList.add('hidden');
-            document.getElementById('sales-form').classList.add('hidden');
+            document.getElementById('warehouse').style.display = 'block';
+            document.getElementById('selected').style.display = 'none';
+            document.getElementById('sales-form').style.display = 'none';
         }
 
         function showSelected() {
-            // Hide all sections and make selected visible
-            document.getElementById('warehouse').classList.add('hidden');
-            document.getElementById('selected').classList.add('visible');
-            document.getElementById('sales-form').classList.add('hidden');
+            document.getElementById('warehouse').style.display = 'none';
+            document.getElementById('selected').style.display = 'block';
+            document.getElementById('sales-form').style.display = 'none';
         }
 
         function recordSales() {
-            // Hide all sections and make sales form visible
-            document.getElementById('warehouse').classList.add('hidden');
-            document.getElementById('selected').classList.add('hidden');
-            document.getElementById('sales-form').classList.add('visible');
+            document.getElementById('warehouse').style.display = 'none';
+            document.getElementById('selected').style.display = 'none';
+            document.getElementById('sales-form').style.display = 'block';
         }
     </script>
-
 </body>
 
 </html>
