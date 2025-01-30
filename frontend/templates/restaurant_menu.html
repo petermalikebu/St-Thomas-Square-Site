@@ -1,124 +1,105 @@
-{% extends 'dashboard.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu</title>
+    <style>
+        /* Existing styles here... */
 
-{% block title %}Restaurant Menu{% endblock %}
-
-{% block content %}
-<div class="restaurant-menu">
-    <h2>Our Restaurant Menu</h2>
-
-    {% if is_open %}
-        <form method="POST" action="{{ url_for('main.place_order') }}" class="order-form" novalidate>
-            <div class="input-group">
-                <label for="name">Your Name</label>
-                <input type="text" name="name" id="name" required placeholder="Enter your full name" aria-label="Your full name">
-            </div>
-
-            <div class="input-group">
-                <label for="food_item">Choose Food Item</label>
-                <select name="food_item" id="food_item" required aria-label="Choose a food item">
-                    <option value="" disabled selected>Select a dish</option>
-                    {% for item in menu['items'] %}
-                        <option value="{{ item }}">{{ item }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label for="pickup_time">Pickup Time (between 9:00 AM and 9:00 PM)</label>
-                <input type="time" name="pickup_time" id="pickup_time" required aria-label="Pickup time" min="09:00" max="21:00">
-            </div>
-
-            <button type="submit" class="btn btn-primary">Place Order</button>
-        </form>
-    {% else %}
-        <p>The restaurant is currently closed. Please visit us between 9:00 AM and 9:00 PM.</p>
-    {% endif %}
-</div>
-
-<style>
-    /* General page styling */
-    body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f4f6f9;
-        color: #333;
-        margin: 0;
-        padding: 0;
-    }
-
-    .restaurant-menu {
-        width: 100%;
-        max-width: 600px;
-        margin: 50px auto;
-        padding: 40px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .restaurant-menu h2 {
-        font-size: 1.8rem;
-        color: #333;
-        text-align: center;
-        margin-bottom: 30px;
-    }
-
-    .input-group {
-        margin-bottom: 20px;
-    }
-
-    .input-group label {
-        font-size: 1rem;
-        color: #555;
-        margin-bottom: 5px;
-        display: block;
-    }
-
-    .input-group input,
-    .input-group select {
-        width: 100%;
-        padding: 12px;
-        font-size: 1rem;
-        color: #333;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        transition: border-color 0.3s ease;
-    }
-
-    .input-group input:focus,
-    .input-group select:focus {
-        outline: none;
-        border-color: #007bff;
-    }
-
-    .btn {
-        width: 100%;
-        padding: 12px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-    .btn:hover {
-        background-color: #0056b3;
-    }
-
-    /* Mobile responsiveness */
-    @media screen and (max-width: 600px) {
-        .restaurant-menu {
-            padding: 30px;
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0); /* Black w/ opacity */
+            background-color: rgba(0,0,0,0.4);
         }
 
-        .restaurant-menu h2 {
-            font-size: 1.5rem;
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
         }
 
-        .restaurant-menu label, .restaurant-menu input, .restaurant-menu select, .restaurant-menu button {
-            font-size: 0.9rem;
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
         }
-    }
-</style>
-{% endblock %}
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Restaurant Menu</h2>
+        <a href="/restaurant">Menu</a>
+        <a href="/order_history">Order History</a>
+    </div>
+
+    <div class="content">
+        <h1>Welcome to the Restaurant!</h1>
+        <h2>Available Menu Items</h2>
+        <ul>
+            {% for food in available_food_items %}
+                <li>
+                    {{ food.name }} - ${{ food.price }}
+                    <button onclick="openOrderForm({{ food.id }}, '{{ food.name }}', {{ food.price }})">Order</button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <form action="/place_order" method="POST">
+    <input type="hidden" name="food_id" id="food_id">
+    <label for="food_name">Food Name:</label>
+    <input type="text" id="food_name" name="food_name" readonly><br><br>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" name="quantity" min="1" required><br><br>
+
+    <label for="customer_name">Your Name:</label>
+    <input type="text" id="customer_name" name="customer_name" required><br><br>
+
+    <label for="table_number">Table Number (optional):</label>
+    <input type="text" id="table_number" name="table_number"><br><br>
+
+    <label for="address">Address (optional):</label>
+    <input type="text" id="address" name="address"><br><br>
+
+    <label for="phone">Phone Number:</label>
+    <input type="text" id="phone" name="phone" required><br><br>
+
+    <button type="submit">Submit Order</button>
+</form>
+
+
+    <script>
+        function openOrderForm(food_id, food_name, food_price) {
+            document.getElementById("food_id").value = food_id;
+            document.getElementById("food_name").value = food_name;
+            document.getElementById("orderModal").style.display = "block";
+        }
+
+        function closeOrderForm() {
+            document.getElementById("orderModal").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>

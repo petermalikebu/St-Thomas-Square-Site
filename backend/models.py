@@ -191,3 +191,13 @@ class Beer(db.Model):
     @property
     def total_value(self):
         return self.price_per_bottle * self.quantity
+
+class Food(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(50), default="Available")  # Available/Out of Stock
+    type = db.Column(db.String(50), nullable=False)  # e.g., 'restaurant'
+    price = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f"<Food {self.name}>"
