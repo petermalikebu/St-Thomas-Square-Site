@@ -86,6 +86,14 @@ def home():
 def index():
     return render_template('base.html')
 
+<<<<<<< HEAD
+=======
+# Route for Bar Events page
+@main.route('/bar-events')
+def bar_events():
+    return render_template('bar_events.html')
+
+>>>>>>> 0badd06c918d5445af8a6b1ae84e1399c3990ead
 
 @main.route('/booking')
 def booking():
@@ -778,6 +786,7 @@ def confirm_event(event_id):
     return jsonify({'error': 'Event not found'}), 404
 
 
+<<<<<<< HEAD
 @main.route('/bar-events')
 def bar_events():
     events = Event.query.filter_by(confirmed=True).all()  # Fetch confirmed events
@@ -786,6 +795,8 @@ def bar_events():
 
 
 
+=======
+>>>>>>> 0badd06c918d5445af8a6b1ae84e1399c3990ead
 @main.route('/menu/restaurant', methods=['GET'])
 @login_required
 def restaurant_menu():
@@ -926,6 +937,7 @@ def delete_food(food_id):
 
     return redirect(url_for('main.restaurant_dashboard'))
 
+<<<<<<< HEAD
 @main.route('/open_stock')
 def open_stock():
     return render_template('open_stock.html')
@@ -933,6 +945,8 @@ def open_stock():
 @main.route('/close_stock')
 def closing_stock():
     return render_template('closing_stock.html')
+=======
+>>>>>>> 0badd06c918d5445af8a6b1ae84e1399c3990ead
 
 @main.route('/rooms', methods=['GET'])
 @login_required
