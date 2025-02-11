@@ -1,8 +1,8 @@
-"""Add Food model
+"""empty message
 
-Revision ID: 943be873fe2c
-Revises: 8bb4c5f4ae58
-Create Date: 2025-01-23 06:14:09.209704
+Revision ID: 5e3e49647a79
+Revises: 
+Create Date: 2025-02-11 05:09:19.314198
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '943be873fe2c'
-down_revision = '8bb4c5f4ae58'
+revision = '5e3e49647a79'
+down_revision = None
 branch_labels = None
 depends_on = None
 
