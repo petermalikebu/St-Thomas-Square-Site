@@ -86,10 +86,6 @@ def home():
 def index():
     return render_template('base.html')
 
-@main.route('/bar-events')
-def bar_events():
-    return render_template('bar_events.html')
-
 
 @main.route('/booking')
 def booking():
