@@ -1,29 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Food</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Food</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+    }
+
+    .min-h-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: row;
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+      width: 250px;
+      background-color: #2c3e50;
+      color: white;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .sidebar h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+
+    .sidebar ul li a {
+      color: white;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    .sidebar ul li a:hover {
+      text-decoration: underline;
+    }
+
+    /* Main content area */
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      background-color: #ffffff;
+    }
+
+    header {
+      background-color: #16a085;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .form-container {
+      background-color: #ecf0f1;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #27ae60;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #2ecc71;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Order {{ food.name }}</h1>
-    <form method="POST">
-        <label for="name">Your Name:</label>
-        <input type="text" id="name" name="name" required><br><br>
+  <div class="min-h-screen">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>Menu</h2>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="#">Orders</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a href="#">About Us</a></li>
+      </ul>
+    </div>
 
-        <label for="phone">Phone Number:</label>
-        <input type="text" id="phone" name="phone" required><br><br>
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        Order Food
+      </header>
 
-        <label for="collection_time">Collection Time (HH:MM):</label>
-        <input type="time" id="collection_time" name="collection_time" required><br><br>
+      <!-- Order Form -->
+      <div class="form-container">
+        <h2 class="text-xl font-bold mb-4">Order {{ food.name }}</h2>
+        <form id="orderForm">
+          <div class="grid">
+            <!-- Hidden Food ID -->
+            <input type="hidden" name="food_id" value="{{ food.id }}">
 
-        <label for="payment_method">Payment Method:</label>
-        <select id="payment_method" name="payment_method" required>
-            <option value="credit_card">Credit Card</option>
-            <option value="paypal">PayPal</option>
-        </select><br><br>
+            <!-- Name Input -->
+            <input type="text" name="name" id="name" placeholder="Your Name" required />
 
-        <button type="submit">Place Order</button>
-    </form>
+            <!-- Phone Number -->
+            <input type="tel" name="phone" id="phone" placeholder="Phone Number" required />
+
+            <!-- Collection Time -->
+            <input type="time" name="collection_time" id="collection_time" required />
+
+            <!-- Payment Method -->
+            <select name="payment_method" id="payment_method" required>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit">Submit Order</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Handle form submission to log details (in a real app, you'd send this to the backend)
+    document.getElementById('orderForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const orderDetails = {
+        food_id: document.querySelector('[name="food_id"]').value,
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        collection_time: document.getElementById('collection_time').value,
+        payment_method: document.getElementById('payment_method').value,
+      };
+
+      console.log(orderDetails);
+    });
+  </script>
 </body>
 </html>

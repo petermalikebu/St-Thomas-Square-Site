@@ -22,6 +22,7 @@ from backend.models import BeerStock
 from backend.models import Event
 from backend.models import Room
 from backend.models import User, db  # Import models and db from the correct location
+from backend.models import Food
 from flask_login import current_user
 
 
@@ -85,15 +86,6 @@ def home():
 def index():
     return render_template('base.html')
 
-# Route for Bar Events page
-@main.route('/bar-events')
-def bar_events():
-    return render_template('bar_events.html')
-
-# Route to serve the restaurant menu page
-@main.route('/restaurant')
-def restaurant():
-    return render_template('restaurant.html')
 
 @main.route('/booking')
 def booking():
@@ -180,15 +172,23 @@ def login():
                 flash('Login successful!', 'success')
                 return redirect(url_for('main.event_planner_dashboard'))  # Redirect to event planner dashboard
 
+
             elif user.role == 'restaurant_tender':
+
                 session['user_id'] = str(user.id)
+
                 session['username'] = user.username
+
                 session['user_role'] = user.role
+
                 user.is_active = True
+
                 db.session.commit()
 
                 flash('Login successful!', 'success')
-                return redirect(url_for('main.restaurant_tender_dashboard'))  # Redirect to restaurant tender dashboard
+
+                return redirect(url_for('main.restaurant_dashboard'))  # Redirect to restaurant chef dashboard
+
 
             else:
                 flash('Invalid role assigned.', 'error')
@@ -416,13 +416,6 @@ def profile():
     return render_template('profile.html', user=user)
 
 
-@main.route('/menu/restaurant', methods=['GET'])
-@login_required
-def restaurant_menu():
-    # Use SQLAlchemy's text() function to handle raw SQL queries
-    result = db.session.execute(text("SELECT * FROM menu_items WHERE type='restaurant'")).fetchall()
-    is_open = 9 <= datetime.now().hour <= 21
-    return render_template('restaurant_menu.html', menu=result, is_open=is_open)
 
 @main.route('/bar-menu', endpoint='bar_menu')
 def bar_menu():
@@ -609,6 +602,7 @@ def sell_beer():
 transactions = []
 
 
+
 @main.route('/record_sales', methods=['POST'])
 @login_required
 def record_sales():
@@ -690,7 +684,6 @@ def generate_report():
 
 
 
-
 # Route to download the bartender report
 @main.route('/download_report')
 @login_required
@@ -741,33 +734,101 @@ def download_shortage_report():
     )
 
 
-@main.route('/event_planner_dashboard')
+@main.route('/event_planner_dashboard', methods=['GET', 'POST'])
 @login_required
 def event_planner_dashboard():
     if session.get('user_role') != 'event_planner':
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    return render_template('event_planner_dashboard.html')  # Template for event planner
+    if request.method == 'POST':
+        name = request.form.get('name')
+        date = request.form.get('date')
+        time = request.form.get('time')
+        description = request.form.get('description')
+
+        # Create new event and save to the database
+        event = Event(
+            name=name,
+            date=f"{date} {time}",
+            location="Location not specified",  # You can add location field if needed
+            description=description
+        )
+        db.session.add(event)
+        db.session.commit()
+
+        flash('Event created successfully!', 'success')
+
+    # Fetch unconfirmed events
+    events = Event.query.filter_by(confirmed=False).all()
+    return render_template('event_planner_dashboard.html', events=events)
+
+@main.route('/confirm_event/<int:event_id>', methods=['POST'])
+@login_required
+def confirm_event(event_id):
+    if session.get('user_role') != 'event_planner':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    event = Event.query.get(event_id)
+    if event:
+        event.confirmed = True
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Event confirmed successfully!'})
+
+    return jsonify({'error': 'Event not found'}), 404
 
 
-@main.route('/restaurant_dashboard')
+@main.route('/bar-events')
+def bar_events():
+    events = Event.query.filter_by(confirmed=True).all()  # Fetch confirmed events
+    return render_template('bar_events.html', events=events)
+
+
+
+
+@main.route('/menu/restaurant', methods=['GET'])
+@login_required
+def restaurant_menu():
+    # Query to fetch only available items of type 'restaurant'
+    result = db.session.execute(text("SELECT * FROM food WHERE type='restaurant' AND status='Available'")).fetchall()
+
+    # Check if the restaurant is open (9 AM to 9 PM)
+    is_open = 9 <= datetime.now().hour <= 21
+
+    # Convert the result into a list of dictionaries (easier to work with in the template)
+    food_items = [
+        {'id': food.id, 'name': food.name, 'price': food.price} for food in result
+    ]
+
+    return render_template('restaurant_menu.html', available_food_items=food_items, is_open=is_open)
+
+
+@main.route('/restaurant')
+def restaurant():
+    # Fetch only available food items for customers
+    available_food_items = Food.query.filter_by(status='Available').all()
+    return render_template('restaurant.html', available_food_items=available_food_items)
+
+
+@main.route('/restaurant_dashboard', methods=['GET'])
 @login_required
 def restaurant_dashboard():
     if session.get('user_role') != 'restaurant_tender':
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    # Example: Retrieve food items and their availability status
-    food_items = Food.query.all()  # Assuming you have a Food model for this
-
-    return render_template('restaurant_tender_dashboard.html', food_items=food_items)
+    # Filter for food items that are available and of type 'restaurant'
+    food_items = Food.query.filter_by(type='restaurant', status='Available').all()
+    return render_template('restaurant_chef_dashboard.html', food_items=food_items)
 
 
 @main.route('/order_food/<int:food_id>', methods=['GET', 'POST'])
-@login_required
 def order_food(food_id):
     food = Food.query.get(food_id)
+
+    if food.status == 'Unavailable':
+        flash('This food item is currently unavailable.', 'error')
+        return redirect(url_for('main.restaurant_menu'))
 
     if request.method == 'POST':
         customer_name = request.form['name']
@@ -782,15 +843,96 @@ def order_food(food_id):
         # Process payment (this could integrate with a payment gateway)
         payment_method = request.form['payment_method']
 
-        # Send confirmation message to customer and notify the kitchen
-        # You can integrate email or SMS here
-
         flash(f"Thank you! Your order for {food.name} will be ready at {collection_time}.", 'success')
-        return redirect(url_for('main.restaurant_dashboard'))
+        return redirect(url_for('main.restaurant_dashboard'))  # Redirect to chef dashboard
 
     return render_template('order_food.html', food=food)
 
 
+
+@main.route('/place_order', methods=['POST'], endpoint='place_order_endpoint')
+def place_order():
+    food_id = request.form['food_id']
+    food_name = request.form['food_name']
+    quantity = int(request.form['quantity'])
+    customer_name = request.form['customer_name']
+    table_number = request.form.get('table_number', '')
+    address = request.form.get('address', '')
+    phone = request.form['phone']
+
+    # Create a new order
+    order = Order(
+        food_id=food_id,
+        food_name=food_name,
+        quantity=quantity,
+        customer_name=customer_name,
+        table_number=table_number,
+        address=address,
+        phone=phone
+    )
+
+    # Save order to the database
+    db.session.add(order)
+    db.session.commit()
+
+    flash(f"Order for {food_name} placed successfully!", 'success')
+    return redirect(url_for('main.restaurant'))
+
+
+
+
+@main.route('/add_food', methods=['GET', 'POST'])
+def add_food():
+    if request.method == 'POST':
+        name = request.form['name']
+        price = float(request.form['price'])  # Convert the price to float
+        status = request.form['status']
+        type_of_food = 'restaurant'  # Assuming you want to always categorize the food under 'restaurant'
+
+        # Add the new food item to the database
+        new_food = Food(name=name, price=price, status=status, type=type_of_food)
+        db.session.add(new_food)
+        db.session.commit()
+
+        # Fetch all food items for the chef dashboard
+        food_items = Food.query.all()
+
+        # Fetch only available food items for the restaurant menu (to be shown in the restaurant's menu page)
+        available_food_items = Food.query.filter_by(status='Available').all()
+
+        # Render the chef's dashboard with the updated list of food items
+        return render_template('restaurant_chef_dashboard.html', food_items=food_items,
+                               available_food_items=available_food_items, added_food=new_food)
+
+    # If it's a GET request, fetch all food items and available items for the menu
+    food_items = Food.query.all()
+    available_food_items = Food.query.filter_by(status='Available').all()
+    return render_template('restaurant_chef_dashboard.html', food_items=food_items,
+                           available_food_items=available_food_items)
+
+
+# Route to delete a food item
+@main.route('/delete_food/<int:food_id>', methods=['GET', 'POST'])
+@login_required
+def delete_food(food_id):
+    food = Food.query.get(food_id)
+
+    if food:
+        db.session.delete(food)
+        db.session.commit()
+        flash(f"The food item '{food.name}' has been deleted.", 'success')
+    else:
+        flash("Food item not found.", 'error')
+
+    return redirect(url_for('main.restaurant_dashboard'))
+
+@main.route('/open_stock')
+def open_stock():
+    return render_template('open_stock.html')
+
+@main.route('/close_stock')
+def closing_stock():
+    return render_template('closing_stock.html')
 
 @main.route('/rooms', methods=['GET'])
 @login_required

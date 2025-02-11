@@ -3,311 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>St. Thomas Square Kitchen</title>
+    <title>Restaurant Food Ordering</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        /* Basic styles */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
             margin: 0;
             padding: 0;
+            background-color: #f8f9fa; /* Light background for the body */
         }
-
-        .min-h-screen {
-            min-height: 100vh;
-        }
-
-        /* Header */
-        header {
+ /* Header Styling */
+        .header {
+            background-color: #1E2A3A;
+            color: white;
+            padding: 40px 0;
             text-align: center;
-            margin-bottom: 2rem;
+            background-image: url('{{ url_for("static", filename="images/hero-bg.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            position: relative;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            color: #2c3e50;
+        .header h1 {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
         }
 
-        p {
-            font-size: 1.1rem;
-            color: #34495e;
-            margin-top: 0.5rem;
+        .header p {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            font-weight: 300;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.4);
         }
 
-        /* Layout */
-        .flex {
+        .logo img {
+            height: 60px;
+            margin-bottom: 20px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .buttons {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
-            padding: 1rem;
+            justify-content: center;
         }
 
-        .category, .menu, .cart {
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .buttons button {
+            margin: 5px;
         }
 
-        /* Category Section */
-        .category {
-            width: 100%;
-            max-width: 250px;
-            margin-bottom: 1rem;
+        #food-items {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #e9ecef; /* Light background for food items */
         }
 
-        .category button {
-            width: 100%;
+        .card {
+            margin: 10px 0;
             padding: 10px;
-            text-align: left;
-            background-color: white;
             border: 1px solid #ccc;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-        }
-
-        .category button.active {
-            background-color: #3498db;
-            color: white;
-        }
-
-        /* Menu Section */
-        .menu {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .menu div {
-            margin-bottom: 1rem;
-        }
-
-        .menu h3 {
-            font-size: 1.2rem;
-            margin: 0;
-        }
-
-        .menu p {
-            font-size: 0.9rem;
-            color: #7f8c8d;
-        }
-
-        .menu button {
-            background-color: #2ecc71;
-            color: white;
-            padding: 8px 16px;
-            border: none;
             border-radius: 5px;
-            cursor: pointer;
-        }
-
-        /* Cart Section */
-        .cart {
-            width: 100%;
-            max-width: 250px;
-        }
-
-        .cart h2 {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
-
-        .cart .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            margin-bottom: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .cart .item button {
-            color: #e74c3c;
-            border: none;
-            background: none;
-            cursor: pointer;
-        }
-
-        .cart .total {
-            font-weight: bold;
-            margin-top: 1rem;
-        }
-
-        .cart button.checkout {
-            background-color: #3498db;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        /* Media Queries for Responsiveness */
-        @media (max-width: 1024px) {
-            .category, .menu, .cart {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .category button {
-                font-size: 0.9rem;
-            }
-
-            .menu h3 {
-                font-size: 1rem;
-            }
-
-            .cart button.checkout {
-                font-size: 0.9rem;
-            }
+            background-color: #fff;
         }
     </style>
 </head>
 <body>
+     <!-- Header Section -->
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
+        </div>
+        <h1>Welcome to St. Thomas Square</h1>
+        <p>Experience luxury, dining, and entertainment all in one place</p>
+    </div>
 
-<div class="min-h-screen">
-    <header>
-        <h1>St. Thomas Square Kitchen</h1>
-        <p>Welcome to our Food Ordering System</p>
-    </header>
-
-    <div class="flex">
-        <!-- Category Section -->
-         <div class="category">
-            <h2>Categories</h2>
-            <button class="category-button" onclick="changeCategory('Fish')">Fish</button>
-            <button class="category-button" onclick="changeCategory('Chicken')">Chicken</button>
-            <button class="category-button" onclick="changeCategory('Beef')">Beef</button>
-            <button class="category-button" onclick="changeCategory('Pork')">Pork</button>
-            <button class="category-button" onclick="changeCategory('Snacks')">Snacks</button>
-            <button class="category-button" onclick="changeCategory('Vegetarian')">Vegetarian</button>
-
-            <!-- Home Button -->
-            <a href="{{ url_for('main.home') }}" class="home-button">
-                <button class="category-button">Home</button>
-            </a>
+    <div class="container">
+        <h1 class="my-4">Welcome to the Restaurant</h1>
+        <div class="buttons">
+            <button class="btn btn-primary m-2" onclick="showCategory('Fish')">Fish Meals</button>
+            <button class="btn btn-primary m-2" onclick="showCategory('Chicken')">Chicken Meals</button>
+            <button class="btn btn-primary m-2" onclick="showCategory('Beef')">Beef Meals</button>
+            <button class="btn btn-primary m-2" onclick="showCategory('Pork')">Pork Meals</button>
+            <button class="btn btn-primary m-2" onclick="showCategory('Snacks')">Snacks</button>
+            <button class="btn btn-primary m-2" onclick="showCategory('Vegetarian')">Vegetarian</button>
         </div>
 
-        <!-- Menu Section -->
-        <div class="menu" id="menu">
-            <h2>Fish Menu</h2>
-            <div class="food-item">
-                <h3>Grilled Salmon</h3>
-                <p>$20</p>
-                <button onclick="addToCart('Grilled Salmon', 20)">Add to Cart</button>
-            </div>
-            <div class="food-item">
-                <h3>Fish Tacos</h3>
-                <p>$15</p>
-                <button onclick="addToCart('Fish Tacos', 15)">Add to Cart</button>
-            </div>
+        <div id="food-items" class="mt-4">
+            <h3>Select a category to view items</h3>
         </div>
 
-        <!-- Cart Section -->
-        <div class="cart">
-            <h2>Shopping Cart</h2>
-            <div id="cart-items"></div>
-            <p class="total">Total: $<span id="total">0</span></p>
-            <button class="checkout" onclick="checkout()">Proceed to Checkout</button>
+        <div id="cart" class="mt-5">
+            <h2>Your Cart</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Price (MK)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="cart-items"></tbody>
+            </table>
+            <h4>Total Price: MK <span id="total-price">0</span></h4>
+        </div>
+
+        <div id="order-form" class="mt-5" style="display: none;">
+            <h2>Order Details</h2>
+            <label for="name">Your Name</label>
+            <input type="text" id="name" placeholder="Enter Your Name" required>
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" placeholder="Enter Your Phone Number" required>
+            <button class="btn btn-success" onclick="submitOrder()">Submit Order</button>
         </div>
     </div>
-</div>
 
-<script>
-    let selectedCategory = 'Fish';
-    const categories = {
-        Fish: [
-            { name: 'Grilled Salmon', price: 20 },
-            { name: 'Fish Tacos', price: 15 }
-        ],
-        Chicken: [
-            { name: 'Chicken Parmesan', price: 18 },
-            { name: 'Chicken Wings', price: 12 }
-        ],
-        Beef: [
-            { name: 'Beef Burger', price: 15 },
-            { name: 'Steak', price: 25 }
-        ],
-        Pork: [
-            { name: 'BBQ Ribs', price: 22 },
-            { name: 'Pork Chops', price: 18 }
-        ],
-        Snacks: [
-            { name: 'Nachos', price: 8 },
-            { name: 'French Fries', price: 5 }
-        ],
-        Vegetarian: [
-            { name: 'Veggie Burger', price: 12 },
-            { name: 'Grilled Vegetables', price: 10 }
-        ]
-    };
+    <script>
+        // Sample food data
+        const foodData = {
+            Fish: [
+                { name: "Fish/Chambo Meal with Nsima", price: 10000 },
+                { name: "Fish/Chambo Meal with Rice", price: 10000 },
+                { name: "Fish/Chambo Meal with Chips", price: 10000 },
+            ],
+            Chicken: [
+                { name: "1/4 Local Chicken with Nsima", price: 7000 },
+                { name: "1/4 Local Chicken with Rice", price: 7000 },
+                { name: "1/4 Local Chicken with Chips", price: 7000 },
+                { name: "1/4 Boiled Local Chicken with Nsima", price: 7000 },
+                { name: "Full Hybrid Chicken with Nsima", price: 24000 },
+                { name: "Full Hybrid Chicken with Chips", price: 24000 },
+                { name: "Full Hybrid Chicken with Rice", price: 24000 },
+                { name: "1/2 Hybrid Chicken with Nsima", price: 14000 },
+                { name: "1/2 Hybrid Chicken with Chips", price: 14000 },
+                { name: "1/2 Hybrid Chicken with Rice", price: 14000 },
+                { name: "1/4 Hybrid Chicken with Nsima", price: 7000 },
+                { name: "1/4 Hybrid Chicken with Rice", price: 7000 },
+                { name: "1/4 Hybrid Chicken with Chips", price: 7000 },
+                { name: "Chicken Stir Fry Meal with Nsima", price: 8000 },
+                { name: "Chicken Stir Fry Meal with Rice", price: 8000 },
+                { name: "Chicken Stir Fry Meal with Chips", price: 8000 },
+                { name: "Chicken Fillet with Nsima", price: 10000 },
+                { name: "Chicken Fillet with Chips", price: 10000 },
+                { name: "Chicken Fillet with Rice", price: 10000 }
+            ],
+            Beef: [
+                { name: "Beef with Nsima", price: 8000 },
+                { name: "Beef with Rice", price: 8000 },
+                { name: "Beef with Chips", price: 8000 },
+                { name: "T-Bone with Nsima", price: 10000 },
+                { name: "T-Bone with Rice", price: 10000 },
+                { name: "T-Bone with Chips", price: 10000 },
+                { name: "T-Bone Only", price: 7000 },
+                { name: "Beef Kebab (1 Stick Braai)", price: 2000 }
+            ],
+            Pork: [
+                { name: "Pork Large with Nsima and Salads", price: 6500 },
+                { name: "Pork Large with Chips and Salads", price: 6500 },
+                { name: "Pork Large with Rice and Salads", price: 6500 },
+                { name: "Pork Medium with Nsima and Salads", price: 5000 },
+                { name: "Pork Medium with Rice and Salads", price: 5000 },
+                { name: "Pork Medium with Chips and Salads", price: 5000 },
+                { name: "Pork Medium Only", price: 4500 }
+            ],
+            Snacks: [
+                { name: "Offal’s Snack with Salads (5 Pieces)", price: 3000 },
+                { name: "Beef Kebab 1 Stick Braai", price: 2000 },
+                { name: "Goat Meat Snack with Salads", price: 3000 },
+                { name: "Plain Chips with Salads", price: 3000 },
+                { name: "Thigh Snack with Salads per Pack", price: 7000 },
+                { name: "Gizzards Snack with Salads per Pack", price: 7000 },
+                { name: "Liver Snack with Salads per Pack", price: 5000 },
+                { name: "Wings Snack with Salads per Pack", price: 7000 },
+                { name: "Drumstick Snack with Salads per Pack", price: 7000 },
+                { name: "Beef Sausage Snack with Salads (1 Piece)", price: 2000 },
+                { name: "Meatballs Snack with Salads (5 Pieces)", price: 5000 },
+                { name: "Beef Samoosa’s Each", price: 1000 },
+                { name: "Chicken Samoosa’s Each ", price: 1000 },
+                { name: "Vegetable Samoosa’s Each", price: 1000 }
+            ],
+            Vegetarian: [
+                { name: "Nsima with Matemba/Nyemba/Kholowa", price: 4500 },
+                { name: "Vegetable Samoosa’s Each", price: 1000 },
+            ],
+        };
 
-    const cart = [];
+        // Cart array
+        let cart = [];
 
-    function changeCategory(category) {
-        selectedCategory = category;
-        document.querySelectorAll('.category-button').forEach(button => {
-            button.classList.remove('active');
-        });
-        document.querySelector(`.category-button:nth-child(${categories[selectedCategory].length + 1})`).classList.add('active');
-        displayMenu();
-    }
+        // Show items for a selected category
+        function showCategory(category) {
+            const items = foodData[category];
+            const foodItemsDiv = document.getElementById("food-items");
 
-    function displayMenu() {
-        const menuElement = document.getElementById('menu');
-        menuElement.innerHTML = `<h2>${selectedCategory} Menu</h2>`;
+            // Clear previous content
+            foodItemsDiv.innerHTML = "";
 
-        categories[selectedCategory].forEach(item => {
-            const foodItem = document.createElement('div');
-            foodItem.classList.add('food-item');
-            foodItem.innerHTML = `
-                <h3>${item.name}</h3>
-                <p>$${item.price}</p>
-                <button onclick="addToCart('${item.name}', ${item.price})">Add to Cart</button>
-            `;
-            menuElement.appendChild(foodItem);
-        });
-    }
+            // Set background image
+            const categoryBackgrounds = {
+                Fish: "url('images/fish.jpg')",
+                Chicken: "url('images/chicken.jpg')",
+                Beef: "url('images/beef.jpg')",
+                Pork: "url('images/pork.jpg')",
+                Snacks: "url('images/snack.jpg')",
+                Vegetarian: "url('images/vegetarian.jpg')",
+            };
 
-    function addToCart(name, price) {
-        cart.push({ name, price });
-        updateCart();
-    }
+            foodItemsDiv.style.backgroundImage = categoryBackgrounds[category] || "none";
+            foodItemsDiv.style.backgroundSize = "cover";
+            foodItemsDiv.style.backgroundPosition = "center";
+            foodItemsDiv.style.borderRadius = "10px";
 
-    function removeFromCart(index) {
-        cart.splice(index, 1);
-        updateCart();
-    }
+            // Add category heading
+            foodItemsDiv.innerHTML = `<h3>${category} Meals</h3>`;
 
-    function updateCart() {
-        const cartItems = document.getElementById('cart-items');
-        cartItems.innerHTML = '';
+            // Check if items exist
+            if (!items || items.length === 0) {
+                foodItemsDiv.innerHTML += `<p>No items available in this category.</p>`;
+                return;
+            }
 
-        let total = 0;
-        cart.forEach((item, index) => {
-            total += item.price;
-            const cartItem = document.createElement('div');
-            cartItem.classList.add('item');
-            cartItem.innerHTML = `
-                <span>${item.name} - $${item.price}</span>
-                <button onclick="removeFromCart(${index})">Remove</button>
-            `;
-            cartItems.appendChild(cartItem);
-        });
+            // Render items
+            items.forEach((item, index) => {
+                foodItemsDiv.innerHTML += `
+                    <div class="card">
+                        <h5>${item.name}</h5>
+                        <p>Price: MK ${item.price}</p>
+                        <label for="quantity-${index}">Quantity:</label>
+                        <input type="number" id="quantity-${index}" value="1" min="1" style="width: 60px;">
+                        <button class="btn btn-primary" onclick="addToCart('${category}', ${index})">Add to Cart</button>
+                    </div>`;
+            });
+        }
 
-        document.getElementById('total').innerText = total;
-    }
+        // Add item to cart
+        function addToCart(category, index) {
+            const item = foodData[category][index];
+            const quantityInput = document.getElementById(`quantity-${index}`);
+            const quantity = parseInt(quantityInput.value);
+            const existingItem = cart.find(cartItem => cartItem.name === item.name);
 
-    function checkout() {
-        alert('Order placed successfully!');
-        cart.length = 0;
-        updateCart();
-    }
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({ ...item, quantity });
+            }
+            renderCart();
+            document.getElementById("order-form").style.display = "block"; // Show order form
+        }
 
-    // Initialize the page with the first category
-    changeCategory(selectedCategory);
-</script>
+        // Render cart
+        function renderCart() {
+            const cartItems = document.getElementById("cart-items");
+            const totalPrice = document.getElementById("total-price");
 
+            cartItems.innerHTML = "";
+            let total = 0;
+
+            cart.forEach((item, idx) => {
+                total += item.price * item.quantity;
+                cartItems.innerHTML += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.price * item.quantity}</td>
+                        <td><button class="btn btn-danger" onclick="removeFromCart(${idx})">Remove</button></td>
+                    </tr>`;
+            });
+
+            totalPrice.textContent = total;
+        }
+
+        // Remove item from cart
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+            if (cart.length === 0) {
+                document.getElementById("order-form").style.display = "none"; // Hide order form if cart is empty
+            }
+        }
+
+        // Submit order
+        function submitOrder() {
+            const name = document.getElementById("name").value;
+            const phone = document.getElementById("phone").value;
+
+            if (!name || !phone) {
+                alert("Please enter your name and phone number.");
+                return;
+            }
+
+            let orderDetails = `Order Details:\nName: ${name}\nPhone: ${phone}\nItems:\n`;
+            cart.forEach(item => {
+                orderDetails += `${item.name} - Quantity: ${item.quantity} - Total: MK ${item.price * item.quantity}\n`;
+            });
+            orderDetails += `Total Price: MK ${document.getElementById("total-price").textContent}`;
+
+            // Format the order details for WhatsApp
+            const whatsappMessage = encodeURIComponent(orderDetails);
+            const whatsappNumber = "0993609184";
+            const whatsappLink = `https://api.whatsapp.com/send? phone=${whatsappNumber}&text=${whatsappMessage}`;
+
+            // Open WhatsApp in a new tab
+            window.open(whatsappLink, '_blank');
+
+            // Clear cart and form
+            cart = [];
+            renderCart();
+            document.getElementById("name").value = "";
+            document.getElementById("phone").value = "";
+            document.getElementById("order-form").style.display = "none"; // Hide order form
+        }
+    </script>
 </body>
 </html>

@@ -1,161 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>St. Thomas Square</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-    }
-     .sidebar .logo img {
-            height: 50px;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Thomas Square</title>
+    <style>
+        /* General reset */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            background-color: #f8f8f8;
+        }
+
+        /* Header Styling */
+        .header {
+            background-color: #1E2A3A;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            background-image: url('{{ url_for("static", filename="images/hero-bg.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            font-weight: 300;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo img {
+            height: 60px;
+            margin-bottom: 20px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        /* Main Content */
+        .content {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            padding: 60px 20px;
+            gap: 40px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .content .card {
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            width: 300px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .content .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h3 {
+            font-size: 2rem;
+            color: #1E2A3A;
             margin-bottom: 20px;
         }
 
-    .bg-cover {
-      background: url('{{ url_for("static", filename="images/hero-bg.jpg") }}') no-repeat center center;
-      background-size: cover;
-      background-position: center;
-      display: flex;
-      height: 100%;
-    }
+        .card p {
+            font-size: 1rem;
+            color: #777;
+            margin-bottom: 20px;
+        }
 
-    .sidebar {
-      background-color: rgba(47, 79, 79, 0.9);
-      color: white;
-      width: 25%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px;
-    }
+        /* Button Styling */
+        .btn {
+            background-color: #FF9900;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
 
-    .btn-sidebar {
-      background-color: #1072ba;
-      color: white;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 10px;
-      text-align: left;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
+        .btn:hover {
+            background-color: #e68900;
+            transform: scale(1.1);
+        }
 
-    .btn-sidebar:hover {
-      background-color: #034c8c;
-    }
+        /* Rotating Text Section */
+        .rotating-text {
+            background-color: #FF9900;
+            color: black;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 40px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
 
-    .main-content {
-      flex-grow: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+        /* Footer Styling */
+        .footer {
+            background-color: #1E2A3A;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
 
-    .content-box {
-      background-color: rgba(0, 0, 0, 0.5);
-      color: white;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      width: 60%;
-    }
+        /* Media Queries for Responsiveness */
+        @media screen and (max-width: 768px) {
+            .content {
+                flex-direction: column;
+                align-items: center;
+            }
 
-    .content-box h1 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-    }
+            .content .card {
+                width: 80%;
+                margin-bottom: 30px;
+            }
 
-    .nav-buttons {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
+            .header h1 {
+                font-size: 2.5rem;
+            }
 
-    .btn-blue {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
+            .header p {
+                font-size: 1rem;
+            }
+        }
 
-    .btn-blue:hover {
-      background-color: #0056b3;
-    }
+        /* Special animation for rotating text */
+        @keyframes rotateTextAnimation {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%);
+            }
 
-    .rotating-text {
-      background-color: white;
-      color: black;
-      padding: 10px;
-      border-radius: 5px;
-      font-weight: bold;
-    }
- </style>
+            50% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(50%);
+            }
+        }
+
+        /* Section title hover effect */
+        .section-title:hover {
+            color: #FF9900;
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="bg-cover">
-    <div class="sidebar">
-      <div class="logo">
+
+    <!-- Header Section -->
+    <div class="header">
+        <div class="logo">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
         </div>
-      <h2>St. Thomas Square</h2>
-      <div>
-        <button class="btn-sidebar">Home</button>
-        <button class="btn-sidebar">About Us</button>
-        <button class="btn-sidebar">Services</button>
-        <button class="btn-sidebar">Contact</button>
-        <!-- Link to base.html -->
-          <a href="{{ url_for('main.index') }}" class="btn-link">Go to Base Page</a>
-
-      </div>
-    </div>
-    <div class="main-content">
-      <div class="content-box">
         <h1>Welcome to St. Thomas Square</h1>
-        <div class="nav-buttons">
-          <a href="{{ url_for('main.restaurant') }}" class="btn-blue">
-            Restaurant
-          </a>
-          <a href="{{ url_for('main.bar_events') }}" class="btn-blue">
-            Bar
-          </a>
-          <a href="{{ url_for('main.booking') }}" class="btn-blue">
-            Booking
-          </a>
-        </div>
-      </div>
+        <p>Experience luxury, dining, and entertainment all in one place</p>
     </div>
 
-        <div id="rotatingText" class="rotating-text">
-          Welcome to St. Thomas Square!
+    <!-- Main Content Section -->
+    <div class="content">
+        <div class="card">
+            <h3>Restaurant</h3>
+            <p>Indulge in fine dining with our expert chefs and curated menu.</p>
+            <a href="{{ url_for('main.restaurant') }}" class="btn">Learn More</a>
         </div>
-      </div>
+
+        <div class="card">
+            <h3>Bar</h3>
+            <p>Relax and enjoy premium drinks at our vibrant bar.</p>
+            <a href="{{ url_for('main.bar_events') }}" class="btn">Explore Bar</a>
+        </div>
+
+        <div class="card">
+            <h3>Booking</h3>
+            <p>Book a room in our luxurious hotel with exclusive offers.</p>
+            <a href="{{ url_for('main.booking') }}" class="btn">Book Now</a>
+        </div>
     </div>
-  </div>
-  <script>
-    const messages = [
-      "Welcome to St. Thomas Square!",
-      "Discover our exquisite restaurant.",
-      "Relax in our luxurious rooms.",
-      "Enjoy drinks at our vibrant bar."
-    ];
 
-    let currentIndex = 0;
-    const rotatingText = document.getElementById('rotatingText');
+    <!-- Rotating Text Section -->
+    <div class="rotating-text" id="rotatingText">
+        Welcome to St. Thomas Square!
+    </div>
 
-    setInterval(() => {
-      currentIndex = (currentIndex + 1) % messages.length;
-      rotatingText.textContent = messages[currentIndex];
-    }, 5000); // Rotate every 5 seconds
-  </script>
+    <!-- Footer Section -->
+    <div class="footer">
+        <p>&copy; 2025 St. Thomas Square. All rights reserved.</p>
+        <div>
+            <a href="#" class="section-title">Privacy Policy</a> | <a href="#" class="section-title">Terms of Service</a>
+        </div>
+    </div>
+
+    <!-- JavaScript for Rotating Text -->
+    <script>
+        const messages = [
+            "Welcome to St. Thomas Square!",
+            "Discover our exquisite restaurant.",
+            "Relax in our luxurious rooms.",
+            "Enjoy drinks at our vibrant bar."
+        ];
+
+        let currentIndex = 0;
+        const rotatingText = document.getElementById('rotatingText');
+
+        setInterval(() => {
+            currentIndex = (currentIndex + 1) % messages.length;
+            rotatingText.textContent = messages[currentIndex];
+        }, 5000); // Rotate every 5 seconds
+    </script>
+
 </body>
+
 </html>

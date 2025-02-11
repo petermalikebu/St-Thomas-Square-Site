@@ -67,14 +67,16 @@ class Room(db.Model):
     def __repr__(self):
         return f"<Room {self.name} - {self.status}>"
 
+
 class Event(db.Model):
     __tablename__ = 'events'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     location = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    confirmed = db.Column(db.Boolean, default=False)  # Track if event is confirmed
 
     def __repr__(self):
         return f"<Event {self.name} on {self.date}>"
@@ -191,3 +193,13 @@ class Beer(db.Model):
     @property
     def total_value(self):
         return self.price_per_bottle * self.quantity
+
+class Food(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(50), default="Available")  # Available/Out of Stock
+    type = db.Column(db.String(50), nullable=False)  # e.g., 'restaurant'
+    price = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f"<Food {self.name}>"
