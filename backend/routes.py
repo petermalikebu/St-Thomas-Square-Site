@@ -421,12 +421,6 @@ def profile():
 
 
 
-@main.route('/bar-menu', endpoint='bar_menu')
-def bar_menu():
-    # Your view logic here
-    return render_template('bar_menu.html')
-
-
 @main.route('/menu/order', methods=['POST'])
 @login_required
 def place_order():
