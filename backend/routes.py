@@ -18,7 +18,7 @@ from backend.models import BarStock
 from backend.models import BartenderStock
 from backend.models import BartenderTransaction
 from backend.models import Beer  # Adjust the path based on your app structure
-from backend.models import BeerStock
+from backend.models import BeerStock, OpenStockModel
 from backend.models import Event
 from backend.models import Room
 from backend.models import User, db  # Import models and db from the correct location
@@ -449,8 +449,9 @@ def place_order():
 def admin_dashboard():
     # Retrieve all beer stock data from the database
     beers = BeerStock.query.all()
-    return render_template("admin_dashboard.html", beers=beers)
-    return render_template('admin_dashboard.html', transactions=transactions)
+    transactions = BartenderTransaction.query.all()
+    return render_template("admin_dashboard.html", beers=beers, transactions=transactions)
+
 
 @main.route('/admin_bar_stock', methods=['GET', 'POST'])
 @login_required
@@ -481,18 +482,6 @@ def admin_bar_stock():
 
     return render_template('admin_bar_stock.html')
 
-@main.route('/bar_dashboard')
-@login_required
-def bar_dashboard():
-    if session.get('user_role') != 'bartender':
-        flash('Access denied!', 'error')
-        return redirect(url_for('main.dashboard'))
-
-    # Retrieve bar events and other necessary information
-    events = BarEvent.query.all()
-    opening_balance = BarStock.query.first()  # Retrieve opening balance or None if not found
-    return render_template('bar_dashboard.html', events=events, opening_balance=opening_balance)
-
 
 @main.route('/bartender_dashboard')
 @login_required
@@ -503,145 +492,122 @@ def bartender_dashboard():
 
     # Retrieve current bar stock from BeerStock table
     beers = BeerStock.query.all()
+    open_stocks = OpenStockModel.query.all()  # Retrieve selected beers
 
-    # Retrieve bartender's specific stock (if any exists)
-    bartender_stocks = BartenderStock.query.filter_by(bartender_id=session['user_id']).all()
+    # Retrieve bartender's specific stock
+    bartender_stocks = BartenderStock.query.filter_by(bartender_id=session.get('user_id')).all()
 
     return render_template(
         'bartender_dashboard.html',
         beers=beers,
+        open_stocks=open_stocks,  # Pass to template
         bartender_stocks=bartender_stocks
     )
 
-@main.route('/bartender/select_beer', methods=['POST'])
+
+@main.route('/bartender/select-beer', methods=['POST'])
 @login_required
 def bartender_select_beer():
-    beer_id = int(request.form['beer_id'])
-    quantity = int(request.form['quantity'])
-
-    beer = BeerStock.query.get(beer_id)
-    if not beer or beer.quantity < quantity:
-        flash("Insufficient stock in the warehouse!", "error")
+    try:
+        beer_id = request.form['beer_id']
+        quantity = int(request.form['quantity'])
+    except (KeyError, ValueError):
+        flash('Invalid input data!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Update the warehouse stock
-    beer.quantity -= quantity
-    db.session.commit()
+    beer = BeerStock.query.get(beer_id)
 
-    bartender_stock = BartenderStock.query.filter_by(bartender_id=session['user_id'], beer_id=beer_id).first()
+    if beer and beer.quantity >= quantity > 0:
+        total_value = beer.price_per_bottle * quantity
 
-    if not bartender_stock:
-        bartender_stock = BartenderStock(
-            bartender_id=session['user_id'],
-            beer_id=beer_id,
-            quantity=quantity,
-            price_per_bottle=beer.price_per_bottle,
-            total_value=quantity * beer.price_per_bottle
-        )
-        db.session.add(bartender_stock)
+        # Deduct stock from warehouse
+        beer.quantity -= quantity
+
+        # Check if the beer is already in OpenStockModel
+        existing_stock = OpenStockModel.query.filter_by(beer_id=beer_id).first()
+
+        if existing_stock:
+            existing_stock.quantity += quantity
+            existing_stock.total_value += total_value
+        else:
+            new_stock = OpenStockModel(
+                beer_id=beer.id,
+                quantity=quantity,
+                total_value=total_value
+            )
+            db.session.add(new_stock)
+
+        db.session.commit()  # Commit the changes
+        flash(f'{quantity} bottles of {beer.name} moved to bartender stock.', 'success')
     else:
-        bartender_stock.quantity += quantity
-        bartender_stock.total_value = bartender_stock.quantity * bartender_stock.price_per_bottle
+        flash('Not enough stock available in the warehouse', 'danger')
 
-    db.session.commit()
-    flash("Beer successfully selected and deducted from warehouse stock!", "success")
     return redirect(url_for('main.bartender_dashboard'))
 
-@main.route('/sell_beer', methods=['GET', 'POST'])
-@login_required
-def sell_beer():
-    bartender_stocks = BartenderStock.query.filter_by(bartender_id=session['user_id']).all()
-    shortages = []
-
-    if request.method == 'POST':
-        beer_id = int(request.form['beer_id'])
-        quantity_sold = int(request.form['quantity_sold'])
-
-        stock = BartenderStock.query.filter_by(bartender_id=session['user_id'], beer_id=beer_id).first()
-
-        if stock and stock.quantity >= quantity_sold:
-            stock.quantity -= quantity_sold
-            stock.total_value = stock.quantity * stock.price_per_bottle
-
-            total_price = quantity_sold * stock.price_per_bottle
-            transaction = BartenderTransaction(
-                bartender_id=session['user_id'],
-                beer_id=beer_id,
-                quantity_sold=quantity_sold,
-                total_price=total_price
-            )
-            db.session.add(transaction)
-            db.session.commit()
-
-            flash("Beer sold successfully!", "success")
-        else:
-            shortage_amount = quantity_sold - stock.quantity if stock else quantity_sold
-            shortages.append({
-                "beer_id": beer_id,
-                "shortage_quantity": shortage_amount,
-                "loss": shortage_amount * (stock.price_per_bottle if stock else 0)
-            })
-            flash("Insufficient stock to sell the requested quantity!", "error")
-
-    # Re-fetch updated data
-    updated_bartender_stocks = BartenderStock.query.filter_by(bartender_id=session['user_id']).all()
-    sales_transactions = BartenderTransaction.query.filter_by(bartender_id=session['user_id']).all()
-
-    # Pass updated data to template
-    return render_template('sell_beer.html', bartender_stocks=updated_bartender_stocks, shortages=shortages, transactions=sales_transactions)
-
-
-
-# Global transactions list to store all sales records
-transactions = []
-
-
-
-@main.route('/record_sales', methods=['POST'])
+@main.route('/bartender/record-sales', methods=['POST'])
 @login_required
 def record_sales():
+    # Debugging: Check if the user is authenticated
     if not current_user.is_authenticated:
         flash('You need to log in to record sales!', 'danger')
-        return render_template('bartender_dashboard.html', beers=BeerStock.query.all())
-
-    # Get the selected beer and quantity sold from the form
-    beer_id = request.form.get('beer_id')
-    quantity_sold = request.form.get('quantity_sold')
+        return redirect(url_for('main.login'))  # Redirect to the login page
 
     try:
-        quantity_sold = int(quantity_sold)
-    except ValueError:
-        flash('Invalid quantity sold value!', 'danger')
-        return render_template('bartender_dashboard.html', beers=BeerStock.query.all())
+        beer_id = request.form['beer_id']
+        quantity_sold = int(request.form['quantity_sold'])
+        sale_type = request.form['sale_type']
+    except (KeyError, ValueError) as e:
+        flash(f'Missing or invalid form data: {str(e)}', 'danger')
+        return redirect(url_for('main.bartender_dashboard'))
 
-    selected_beer = BartenderStock.query.filter_by(bartender_id=current_user.id, beer_id=beer_id).first()
+    stock = OpenStockModel.query.filter_by(beer_id=beer_id).first()
 
-    if not selected_beer or selected_beer.quantity < quantity_sold:
-        flash(f'Not enough stock for {selected_beer.beer.name}!', 'danger')
-        return render_template('bartender_dashboard.html', beers=BeerStock.query.all())
+    if stock and stock.quantity >= quantity_sold:
+        # Calculate the sale total
+        beer = stock.beer
+        if sale_type == 'bottle':
+            total_price = beer.price_per_bottle * quantity_sold
+        else:  # If it's a shot, adjust the price accordingly
+            total_price = (beer.price_per_bottle / 5) * quantity_sold  # Example price for shots
 
-    total_revenue = quantity_sold * selected_beer.beer.price_per_bottle
-    profit = total_revenue  # Adjust as needed
+        # Subtract the sold quantity from OpenStockModel
+        stock.quantity -= quantity_sold
+        stock.total_value -= total_price
 
-    selected_beer.quantity -= quantity_sold
-    db.session.commit()
+        if stock.quantity == 0:
+            db.session.delete(stock)
 
-    transaction = BartenderTransaction(
-        bartender_id=current_user.id,
-        beer_id=selected_beer.beer.id,
-        quantity_sold=quantity_sold,
-        total_price=total_revenue,
-        transaction_date=datetime.utcnow()
-    )
+        # Record the transaction
+        transaction = BartenderTransaction(
+            bartender_id=current_user.id,
+            beer_id=beer.id,
+            quantity_sold=quantity_sold,
+            total_price=total_price,
+            sale_type=sale_type,
+            transaction_date=datetime.utcnow()
+        )
+        db.session.add(transaction)
+        db.session.commit()
 
-    db.session.add(transaction)
-    db.session.commit()
+        flash('Sale recorded successfully!', 'success')
+    else:
+        flash('Not enough stock or invalid sale!', 'danger')
 
-    flash('Sales recorded successfully!', 'success')
+    return redirect(url_for('main.bartender_dashboard'))
 
-    updated_beers = BeerStock.query.all()
 
-    return render_template('bartender_dashboard.html', beers=updated_beers, beer_id=beer_id)
+@main.route('/sales_transactions')
+@login_required
+def sales_transactions():
+    # Debugging: Check if the user is authenticated
+    if not current_user.is_authenticated:
+        flash('You need to log in to view sales transactions!', 'danger')
+        return redirect(url_for('main.login'))  # Redirect to the login page
+
+    # Query transactions specific to the logged-in bartender
+    transactions = BartenderTransaction.query.filter_by(bartender_id=current_user.id).all()
+
+    return render_template('sales_transactions.html', transactions=transactions)
 
 
 
@@ -726,6 +692,26 @@ def download_shortage_report():
         as_attachment=True,
         download_name="shortage_report.csv"
     )
+
+
+
+
+@main.route('/bar_dashboard')
+@login_required
+def bar_dashboard():
+    if session.get('user_role') != 'bartender':
+        flash('Access denied!', 'error')
+        return redirect(url_for('main.dashboard'))
+
+    # Retrieve bar events and other necessary information
+    events = BarEvent.query.all()
+    opening_balance = BarStock.query.first() or 0  # Retrieve opening balance or None if not found
+    return render_template('bar_dashboard.html', events=events, opening_balance=opening_balance)
+
+
+@main.route('/bar-menu')
+def bar_menu():
+    return render_template('bar_menu.html')
 
 
 @main.route('/event_planner_dashboard', methods=['GET', 'POST'])

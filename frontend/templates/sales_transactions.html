@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bartender Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #e8f1f5;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #1a202c;
+            color: #fff;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+        }
+        .sidebar h3 {
+            color: #ff7f50;
+        }
+        .main-content {
+ margin-left: 270px;
+            padding: 20px;
+        }
+        .btn-custom {
+            background-color: #ff7f50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Bartender Dashboard</h3>
+        <ul class="list-unstyled">
+            <li><a href="{{ url_for('main.record_sales') }}" class="text-white">Record Sales</a></li>
+            <li><a href="{{ url_for('main.sales_transactions') }}" class="text-white">View Sales Transactions</a></li>
+            <li><a href="{{ url_for('main.logout') }}" class="text-white">Logout</a></li>
+
+
+        </ul>
+    </div>
+    <div class="main-content">
+        <h2>Select Beer and Record Sale</h2>
+        <form action="{{ url_for('main.record_sales') }}" method="POST">
+            <div class="form-group">
+                <label for="beer_id">Select Beer:</label>
+                <select name="beer_id" id="beer_id" class="form-control" required>
+                    {% for beer in beers %}
+                    <option value="{{ beer.id }}">{{ beer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="quantity_sold">Quantity Sold:</label>
+                <input type="number" name="quantity_sold" id="quantity_sold" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="sale_type">Sale Type:</label>
+                <select name="sale_type" id="sale_type" class="form-control" required>
+                    <option value="bottle">Bottle</option>
+                    <option value="shot">Shot</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-custom">Record Sale</button>
+        </form>
+    </div>
+</body>
+</html>
