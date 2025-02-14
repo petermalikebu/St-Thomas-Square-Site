@@ -27,6 +27,28 @@ class User(db.Model):
         return f"<User {self.username}, Role: {self.role}>"
 
 
+class ClosedStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)  # Integer ID for ClosedStock
+    beer_id = db.Column(db.Integer, db.ForeignKey('beer.id'), nullable=False)  # Foreign key to Beer
+    quantity_sold = db.Column(db.Integer, nullable=False)
+    total_value = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp for record creation
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)  # Timestamp for updates
+
+    # Adding ForeignKey relationships for Beer
+    beer = db.relationship('Beer', back_populates='closed_stocks')
+
+    # Optionally add user_id if it relates to a user who logged the closed stock
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key to User model
+    user = db.relationship('User', backref='closed_stocks')  # Relationship to User
+
+    def __init__(self, beer_id, quantity_sold, total_value, user_id):
+        self.beer_id = beer_id
+        self.quantity_sold = quantity_sold
+        self.total_value = total_value
+        self.user_id = user_id
+
 
 class MenuItem(db.Model):
     __tablename__ = 'menu_items'
@@ -212,7 +234,38 @@ class Food(db.Model):
     name = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(50), default="Available")  # Available/Out of Stock
     type = db.Column(db.String(50), nullable=False)  # e.g., 'restaurant'
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=True)  # Allow NULL values
+    quantity = db.Column(db.Float, nullable=False)  # Quantity in stock
+    sold_quantity = db.Column(db.Float, default=0)  # Quantity sold
+    open_stock = db.Column(db.Float, default=0)  # Open stock
+    closed_stock = db.Column(db.Float, default=0)  # Closed stock
 
     def __repr__(self):
         return f"<Food {self.name}>"
+
+
+class StockMovement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    food_id = db.Column(db.Integer, db.ForeignKey('food.id'), nullable=True)
+    food = db.relationship('Food', backref=db.backref('stock_movements', lazy=True))
+    open_stock = db.Column(db.Float, nullable=False)  # Stock available at the start
+    closed_stock = db.Column(db.Float, nullable=False)  # Stock remaining after usage
+    quantity_used = db.Column(db.Float, nullable=False)  # Quantity sold or used
+
+    def __repr__(self):
+        return f"<StockMovement {self.food.name} used {self.quantity_used} units>"
+
+class ActivityLog(db.Model):
+    __tablename__ = 'activity_log'  # Explicit table name for consistency
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    activity_type = db.Column(db.String(50), nullable=False)  # e.g., 'Login', 'Upload', 'Download'
+    description = db.Column(db.String(255), nullable=False)  # Detailed activity info
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Corrected Foreign Key reference
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user = db.relationship('User', backref=db.backref('activity_logs', lazy=True))
+
+    def __repr__(self):
+        return f"<ActivityLog {self.activity_type} at {self.timestamp}>"

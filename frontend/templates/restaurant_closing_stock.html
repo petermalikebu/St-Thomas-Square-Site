@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closing Stock</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #1c1c1c;
+            padding-top: 50px;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 15px;
+            text-decoration: none;
+            color: #f8f9fa;
+            font-weight: 500;
+            margin: 10px 0;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: #ff7f50;
+        }
+
+        .sidebar .text-danger {
+            color: #e74c3c !important;
+        }
+
+        .container {
+            margin-left: 270px;
+            padding: 30px;
+        }
+
+        h3 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .thead-dark th {
+            background-color: #34495e;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .table th,
+        .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .table td {
+            font-weight: 400;
+        }
+
+        .table-bordered td,
+        .table-bordered th {
+            border: 1px solid #ddd;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+
+        .table th {
+            padding: 15px;
+        }
+
+        .table td {
+            padding: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <a href="{{ url_for('main.restaurant_dashboard') }}">🏠 Home</a>
+        <a href="{{ url_for('main.add_food') }}">➕ Add Food</a>
+        <a href="{{ url_for('main.restaurant_closing_stock') }}" class="active">📦 Closing Stock</a>
+        <a href="{{ url_for('main.logout') }}" class="text-danger">🚪 Logout</a>
+    </div>
+
+    <div class="container">
+        <h3>Closing Stock</h3>
+        <table class="table table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Food Name</th>
+                    <th>Quantity Left</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for food in closing_stock %}
+                <tr>
+                    <td>{{ food.name }}</td>
+                    <td>{{ food.closed_stock }}</td>  <!-- Show remaining stock instead of sold items -->
+                    <td>{{ food.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</body>
+
+</html>

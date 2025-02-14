@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beer Total Sales</title>
+    <!-- You can include your CSS files here -->
+</head>
+<body>
+    <h3>Beer Total Sales</h3>
+    <form action="{{ url_for('main.submit_sales') }}" method="POST">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Beer Name</th>
+                    <th>Type</th>
+                    <th>Price per Bottle (MWK)</th>
+                    <th>Quantity</th>
+                    <th>Select</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for beer in beers %}
+                <tr>
+                    <td>{{ beer.name }}</td>
+                    <td>{{ beer.beer_type }}</td>
+                    <td>{{ beer.price_per_bottle }} MWK</td>
+                    <td>{{ beer.quantity }}</td>
+                    <td>
+                        <input type="checkbox" name="selected_beers" value="{{ beer.id }}">
+                        <input type="number" name="quantity_{{ beer.id }}" min="1" max="{{ beer.quantity }}" placeholder="Quantity" class="form-control">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary">Submit Sales</button>
+    </form>
+
+    <div id="selected-beers" style="display: none;">
+        <h4>My Selected Beers</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Beer Name</th>
+                    <th>Quantity</th>
+                    <th>Total Value (MWK)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in open_stocks %}
+                <tr>
+                    <td>{{ stock.beer.name }}</td>
+                    <td>{{ stock.quantity }}</td>
+                    <td>{{ stock.total_value }} MWK</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

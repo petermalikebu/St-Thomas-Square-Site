@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closed Stock for the Day</title>
+    <!-- You can include your CSS files here -->
+</head>
+<body>
+    <h3>Closed Stock for the Day</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Beer Name</th>
+                <th>Quantity Sold</th>
+                <th>Total Value (MWK)</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stock in closed_stocks %}
+            <tr>
+                <td>{{ stock.beer.name }}</td>
+                <td>{{ stock.quantity_sold }}</td>
+                <td>{{ stock.total_value }} MWK</td>
+                <td>{{ stock.date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
