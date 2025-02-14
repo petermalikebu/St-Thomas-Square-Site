@@ -225,6 +225,8 @@ class Beer(db.Model):
     price_per_bottle = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
 
+    closed_stocks = db.relationship('ClosedStock', back_populates='beer')
+
     @property
     def total_value(self):
         return self.price_per_bottle * self.quantity
