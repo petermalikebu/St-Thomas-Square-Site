@@ -22,7 +22,7 @@ from backend.models import BeerStock, OpenStockModel
 from backend.models import Event
 from backend.models import Room
 from backend.models import User, db  # Import models and db from the correct location
-from .models import StockMovement, Food
+from .models import StockMovement, Food, ClosedStock
 
 main = Blueprint('main', __name__)
 report_dir = os.path.join(os.getcwd(), 'reports')
