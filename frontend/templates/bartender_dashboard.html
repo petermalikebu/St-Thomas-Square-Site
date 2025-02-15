@@ -42,6 +42,7 @@
             text-align: left;
             border-radius: 4px;
             transition: background-color 0.3s ease;
+            cursor: pointer;
         }
         .sidebar button:hover {
             background-color: #d85f3e;
@@ -91,6 +92,7 @@
             border-radius: 4px;
             color: white;
             transition: background-color 0.3s ease;
+            cursor: pointer;
         }
         .btn-primary:hover {
             background-color: #2980b9;
@@ -108,11 +110,11 @@
     <div class="sidebar">
         <h3>Bartender Dashboard</h3>
         <p>Welcome, {{ session['username'] }}</p>
-        <button onclick="showBeers()">View Available Beers</button>
-        <button onclick="showSelected()">My Selected Beers</button>
-        <button onclick="showSalesForm()">Record Sales</button>
-        <button onclick="location.href='{{ url_for('main.beer_total_sales') }}'">View Beer Total Sales</button> <!-- New link for beer sales -->
-        <button onclick="location.href='{{ url_for('main.view_closed_stock') }}'">View Closed Stocks</button>
+        <button type="button" onclick="showBeers()">View Available Beers</button>
+        <button type="button" onclick="showSelected()">My Selected Beers</button>
+        <button type="button" onclick="showSalesForm()">Record Sales</button>
+        <button type="button" onclick="location.href='{{ url_for('main.beer_total_sales') }}'">View Beer Total Sales</button>
+        <button type="button" onclick="location.href='{{ url_for('main.view_closed_stock') }}'">View Closed Stocks</button>
         <form action="{{ url_for('main.logout') }}" method="POST">
             <button type="submit" class="logout-btn">Logout</button>
         </form>
@@ -164,7 +166,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for stock in open_stocks %}
+                    {% for stock in bartender_stocks %}
                     <tr>
                         <td>{{ stock.beer.name }}</td>
                         <td>{{ stock.quantity }}</td>
@@ -182,7 +184,7 @@
                 <div class="form-group">
                     <label for="beer_id">Beer:</label>
                     <select name="beer_id" id="beer_id" class="form-control">
-                        {% for stock in open_stocks %}
+                        {% for stock in bartender_stocks %}
                             <option value="{{ stock.beer.id }}" data-stock="{{ stock.quantity }}">
                                 {{ stock.beer.name }} (Available: {{ stock.quantity }})
                             </option>
@@ -242,18 +244,21 @@
             document.getElementById('available-beers').style.display = 'block';
             document.getElementById('selected-beers').style.display = 'none';
             document.getElementById('sales-form').style.display = 'none';
+            document.getElementById('sales-transactions').style.display = 'none';
         }
 
         function showSelected() {
             document.getElementById('available-beers').style.display = 'none';
             document.getElementById('selected-beers').style.display = 'block';
             document.getElementById('sales-form').style.display = 'none';
+            document.getElementById('sales-transactions').style.display = 'none';
         }
 
         function showSalesForm() {
             document.getElementById('available-beers').style.display = 'none';
             document.getElementById('selected-beers').style.display = 'none';
             document.getElementById('sales-form').style.display = 'block';
+            document.getElementById('sales-transactions').style.display = 'none';
         }
     </script>
 </body>

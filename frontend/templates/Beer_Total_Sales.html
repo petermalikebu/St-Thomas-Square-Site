@@ -4,60 +4,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beer Total Sales</title>
-    <!-- You can include your CSS files here -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            padding-top: 40px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar h3 {
+            color: #ec644b;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+        .sidebar p {
+            color: #ccc;
+            text-align: center;
+        }
+        .sidebar button {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: #ec644b;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            text-align: left;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .sidebar button:hover {
+            background-color: #d85f3e;
+        }
+        .sidebar .logout-btn {
+            background-color: #e74c3c;
+        }
+        .sidebar .logout-btn:hover {
+            background-color: #c0392b;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        h4 {
+            color: #34495e;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        table th, table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+            font-size: 1rem;
+        }
+        table th {
+            background-color: #ec644b;
+            color: #fff;
+        }
+        table td {
+            background-color: #fff;
+        }
+        table tr:nth-child(even) td {
+            background-color: #f9f9f9;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border: none;
+            font-size: 1rem;
+            padding: 10px 15px;
+            border-radius: 4px;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <h3>Beer Total Sales</h3>
-    <form action="{{ url_for('main.submit_sales') }}" method="POST">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Beer Name</th>
-                    <th>Type</th>
-                    <th>Price per Bottle (MWK)</th>
-                    <th>Quantity</th>
-                    <th>Select</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for beer in beers %}
-                <tr>
-                    <td>{{ beer.name }}</td>
-                    <td>{{ beer.beer_type }}</td>
-                    <td>{{ beer.price_per_bottle }} MWK</td>
-                    <td>{{ beer.quantity }}</td>
-                    <td>
-                        <input type="checkbox" name="selected_beers" value="{{ beer.id }}">
-                        <input type="number" name="quantity_{{ beer.id }}" min="1" max="{{ beer.quantity }}" placeholder="Quantity" class="form-control">
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
 
-        <button type="submit" class="btn btn-primary">Submit Sales</button>
-    </form>
+    <div class="sidebar">
+        <h3>Bartender Dashboard</h3>
+        <p>Welcome, {{ session['username'] }}</p>
+        <!-- Link to return to Bartender Dashboard -->
+        <button onclick="location.href='{{ url_for('main.bartender_dashboard') }}'">Back to Bartender Dashboard</button>
+        <form action="{{ url_for('main.logout') }}" method="POST">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
 
-    <div id="selected-beers" style="display: none;">
-        <h4>My Selected Beers</h4>
+    <div class="main-content">
+        <h4>Beer Total Sales</h4>
         <table>
             <thead>
                 <tr>
                     <th>Beer Name</th>
-                    <th>Quantity</th>
-                    <th>Total Value (MWK)</th>
+                    <th>Quantity Sold</th>
+                    <th>Total Price (MWK)</th>
+                    <th>Cash Received (MWK)</th>
+                    <th>Sale Type</th>
+                    <th>Transaction Date</th>
                 </tr>
             </thead>
             <tbody>
-                {% for stock in open_stocks %}
+                {% for sale in sales %}
                 <tr>
-                    <td>{{ stock.beer.name }}</td>
-                    <td>{{ stock.quantity }}</td>
-                    <td>{{ stock.total_value }} MWK</td>
+                    <td>{{ sale.beer.name }}</td>
+                    <td>{{ sale.quantity_sold }}</td>
+                    <td>{{ sale.total_price }} MWK</td>
+                    <td>{{ sale.cash_in_hand }} MWK</td>
+                    <td>{{ sale.sale_type }}</td>
+                    <td>{{ sale.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <script>
+        function showBeers() {
+            document.getElementById('available-beers').style.display = 'block';
+            document.getElementById('selected-beers').style.display = 'none';
+            document.getElementById('sales-form').style.display = 'none';
+        }
+
+        function showSelected() {
+            document.getElementById('available-beers').style.display = 'none';
+            document.getElementById('selected-beers').style.display = 'block';
+            document.getElementById('sales-form').style.display = 'none';
+        }
+
+        function showSalesForm() {
+            document.getElementById('available-beers').style.display = 'none';
+            document.getElementById('selected-beers').style.display = 'none';
+            document.getElementById('sales-form').style.display = 'block';
+        }
+    </script>
 </body>
 </html>

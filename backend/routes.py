@@ -1,6 +1,6 @@
 import os
 from functools import wraps
-
+from datetime import datetime
 import pandas as pd
 import plotly.express as px
 from flask import Blueprint
@@ -20,9 +20,10 @@ from backend.models import BartenderTransaction
 from backend.models import Beer  # Adjust the path based on your app structure
 from backend.models import BeerStock, OpenStockModel
 from backend.models import Event
-from backend.models import Room
+from backend.models import Room,SalesTransaction
 from backend.models import User, db  # Import models and db from the correct location
-from .models import StockMovement, Food, ClosedStock
+from .models import StockMovement, Food, ClosedStock, SoldFood
+from random import choice
 
 main = Blueprint('main', __name__)
 report_dir = os.path.join(os.getcwd(), 'reports')
@@ -93,6 +94,10 @@ def get_closing_stock():
     ).join(StockMovement, Food.id == StockMovement.food_id).all()
 
     return closing_stock
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
 
 
 @main.route('/')
@@ -534,48 +539,42 @@ def bartender_select_beer():
         flash('Invalid input data!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
+    # Retrieve the selected beer from BeerStock
     beer = BeerStock.query.get(beer_id)
 
     if beer and beer.quantity >= quantity > 0:
         total_value = beer.price_per_bottle * quantity
-        beer.quantity -= quantity
+        beer.quantity -= quantity  # Subtract from warehouse stock
 
-        # Check if beer exists in OpenStockModel
-        existing_stock = OpenStockModel.query.filter_by(beer_id=beer_id).first()
-        if existing_stock:
-            existing_stock.quantity += quantity
-            existing_stock.total_value += total_value
+        # Check if the beer already exists in BartenderStock
+        existing_bartender_stock = BartenderStock.query.filter_by(
+            bartender_id=session.get('user_id'),
+            beer_id=beer_id
+        ).first()
+
+        if existing_bartender_stock:
+            # If it exists, update the quantity and total value
+            existing_bartender_stock.quantity += quantity
+            existing_bartender_stock.total_value += total_value
         else:
-            new_stock = OpenStockModel(
+            # If it doesn't exist, create a new BartenderStock entry
+            new_bartender_stock = BartenderStock(
+                bartender_id=session.get('user_id'),
                 beer_id=beer.id,
                 quantity=quantity,
+                price_per_bottle=beer.price_per_bottle,
                 total_value=total_value
             )
-            db.session.add(new_stock)
+            db.session.add(new_bartender_stock)
 
         # Commit stock updates to the database
         db.session.commit()
 
-        # Now, update session open_stocks for bartender stock
-        beer_stock = next((stock for stock in session.get('open_stocks', []) if stock['beer']['id'] == beer_id), None)
-        if beer_stock:
-            beer_stock['quantity'] += quantity
-            beer_stock['total_value'] += total_value
-        else:
-            session['open_stocks'] = session.get('open_stocks', [])
-            session['open_stocks'].append({
-                'beer': {'id': beer.id, 'name': beer.name},
-                'quantity': quantity,
-                'total_value': total_value
-            })
-        session.modified = True  # Ensure session is saved
-
         flash(f'{quantity} bottles of {beer.name} moved to bartender stock.', 'success')
     else:
-        flash('Not enough stock available in the warehouse', 'danger')
+        flash('Not enough stock available in the warehouse.', 'danger')
 
     return redirect(url_for('main.bartender_dashboard'))
-
 
 
 @main.route('/bartender/record-sales', methods=['POST'])
@@ -586,95 +585,99 @@ def record_sales():
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    # Extract form data
+    # Extract form data safely
     try:
-        beer_id = int(request.form['beer_id'])
-        quantity_sold = int(request.form['quantity_sold'])
-        cash_in_hand = float(request.form['cash_in_hand'])
-    except (KeyError, ValueError):
+        beer_id = int(request.form.get('beer_id', 0))
+        quantity_sold = int(request.form.get('quantity_sold', 0))
+        cash_in_hand = float(request.form.get('cash_in_hand', 0.0))
+    except ValueError:
         flash('Invalid form data!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Check if 'open_stocks' exists in the session
-    if 'open_stocks' not in session:
-        flash('No open stocks available. Please ensure stocks are loaded.', 'danger')
+    # Validate form input values
+    if not beer_id or quantity_sold <= 0 or cash_in_hand < 0:
+        flash('Invalid sale details. Please check your inputs.', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Fetch the selected beer stock from the session
-    beer_stock = next((stock for stock in session['open_stocks'] if stock['beer']['id'] == beer_id), None)
+    # Check if the beer exists in the BartenderStock
+    bartender_stock = BartenderStock.query.filter_by(
+        bartender_id=session.get('user_id'),
+        beer_id=beer_id
+    ).first()
 
-    if not beer_stock:
-        flash('Beer not found in stock!', 'danger')
+    if not bartender_stock:
+        flash('Beer not found in your stock!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Check if enough stock is available
-    if beer_stock['quantity'] >= quantity_sold:
-        # Update stock quantity in session
-        beer_stock['quantity'] -= quantity_sold
-        beer_stock['total_value'] -= beer_stock['beer']['price_per_bottle'] * quantity_sold
+    # Check if enough stock is available in BartenderStock
+    if bartender_stock.quantity < quantity_sold:
+        flash('Not enough stock available in your stock!', 'danger')
+        return redirect(url_for('main.bartender_dashboard'))
 
-        # Update stock in the database
-        stock = OpenStockModel.query.filter_by(beer_id=beer_id).first()
-        if stock:
-            stock.quantity -= quantity_sold
-            stock.total_value -= quantity_sold * stock.beer.price_per_bottle
-            if stock.quantity == 0:
-                db.session.delete(stock)
+    # Check if the beer exists in the BeerStock database
+    beer = BeerStock.query.get(beer_id)
+    if not beer:
+        flash('Beer not found in the database!', 'danger')
+        return redirect(url_for('main.bartender_dashboard'))
 
-            db.session.commit()
+    # Validate cash in hand is sufficient
+    total_price = beer.price_per_bottle * quantity_sold
+    if cash_in_hand < total_price:
+        flash('Insufficient cash in hand!', 'danger')
+        return redirect(url_for('main.bartender_dashboard'))
 
-        # Calculate total price based on whole bottle sale (as shot option is no longer needed)
-        beer = Beer.query.get(beer_id)
-        total_price = beer.price_per_bottle * quantity_sold
+    try:
+        # Update the quantity in BartenderStock
+        bartender_stock.quantity -= quantity_sold
+        bartender_stock.total_value -= total_price  # Update total value if needed
+        db.session.commit()  # Commit the changes to BartenderStock
 
-        # Record the transaction in the database
+        # Record the bartender transaction
         new_transaction = BartenderTransaction(
             bartender_id=session.get('user_id'),
             beer_id=beer_id,
             quantity_sold=quantity_sold,
             total_price=total_price,
-            sale_type="bottle",  # Sale type is now fixed to 'bottle'
+            sale_type="bottle",  # Sale type is fixed to 'bottle'
             transaction_date=datetime.utcnow()
         )
         db.session.add(new_transaction)
-        db.session.commit()
 
-        # Add a sales transaction for future reference (if needed)
+        # Record the sales transaction
         new_sales_transaction = SalesTransaction(
+            bartender_id=session.get('user_id'),  # Add bartender_id
             beer_id=beer_id,
             quantity_sold=quantity_sold,
-            sale_type="bottle",  # Sale type is now fixed to 'bottle'
             total_price=total_price,
-            cash_in_hand=cash_in_hand
+            cash_in_hand=cash_in_hand,
+            transaction_date=datetime.utcnow()  # Add transaction date
         )
         db.session.add(new_sales_transaction)
+
+        # Commit database changes
         db.session.commit()
 
         flash('Sale recorded successfully!', 'success')
-        return redirect(url_for('main.bartender_dashboard'))  # Redirect to the dashboard or sales overview page
-    else:
-        flash('Not enough stock available', 'danger')
-        return redirect(url_for('main.bartender_dashboard'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Database error: {str(e)}', 'danger')
+
+    return redirect(url_for('main.bartender_dashboard'))
 
 
-@main.route('/beer_total_sales', methods=['GET', 'POST'])
+
+@main.route('/beer_total_sales', methods=['GET'])
+@login_required
 def beer_total_sales():
-    beers = Beer.query.all()  # Get all the beers available
-    if request.method == 'POST':
-        # Loop through selected beers and save the sales data
-        selected_beers = request.form.getlist('selected_beers')
-        for beer_id in selected_beers:
-            quantity_sold = int(request.form[f"quantity_{beer_id}"])
-            beer = Beer.query.get(beer_id)
-            total_value = beer.price_per_bottle * quantity_sold
-            closed_stock = ClosedStock(beer_id=beer.id, quantity_sold=quantity_sold, total_value=total_value)
-            db.session.add(closed_stock)
+    # Ensure only bartenders can view sales
+    if session.get('user_role') != 'bartender':
+        flash('Access denied!', 'error')
+        return redirect(url_for('main.dashboard'))
 
-        db.session.commit()
-        return redirect(url_for('main.view_closed_stock'))
+    # Retrieve all sales transactions for the logged-in bartender
+    sales = SalesTransaction.query.filter_by(bartender_id=session.get('user_id')).all()
 
-    return render_template('beer_total_sales.html', beers=beers)
-
+    return render_template('beer_total_sales.html', sales=sales)
 
 @main.route('/view_closed_stock')
 def view_closed_stock():
@@ -773,7 +776,7 @@ def bar_menu():
 @login_required
 def event_planner_dashboard():
     if session.get('user_role') != 'event_planner':
-        flash('Access denied!', 'error')
+        flash('Access denied! You do not have the correct permissions.', 'error')
         return redirect(url_for('main.dashboard'))
 
     if request.method == 'POST':
@@ -782,22 +785,75 @@ def event_planner_dashboard():
         time = request.form.get('time')
         description = request.form.get('description')
 
+        # Ensure all fields are provided
+        if not name or not date or not time:
+            flash("All fields are required!", 'error')
+            return redirect(url_for('main.event_planner_dashboard'))
+
+        # Combine date and time to create a datetime object
+        try:
+            event_datetime = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            flash("Invalid date or time format!", 'error')
+            return redirect(url_for('main.event_planner_dashboard'))
+
         # Create new event and save to the database
         event = Event(
             name=name,
-            date=f"{date} {time}",
-            location="Location not specified",  # You can add location field if needed
-            description=description
+            date=event_datetime,  # Save as DateTime
+            location="Location not specified",  # You can add a location field if needed
+            description=description,
+            time=time  # Save time as well
         )
         db.session.add(event)
         db.session.commit()
 
         flash('Event created successfully!', 'success')
 
-    # Fetch unconfirmed events
-    events = Event.query.filter_by(confirmed=False).all()
+    # Fetch unconfirmed events that have not passed
+    current_datetime = datetime.now()
+    events = Event.query.filter(Event.confirmed == False, Event.date >= current_datetime).all()
+
     return render_template('event_planner_dashboard.html', events=events)
 
+
+
+@main.route('/upload', methods=['POST'])
+def upload_event():
+    if 'image' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+
+    file = request.files['image']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(request.url)
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)  # Save the file to static/images
+
+        # Assuming other event details are stored in a database
+        event_data = {
+            'name': request.form.get('name'),
+            'date': request.form.get('date'),
+            'time': request.form.get('time'),
+            'description': request.form.get('description'),
+            'category': request.form.get('category'),
+            'image_url': filename  # Store filename in the database
+        }
+
+        # Save event_data to database (MongoDB, SQLite, etc.)
+        flash('Event added successfully!')
+        return redirect(url_for('confirmed_events'))  # Redirect to event page
+
+    flash('Invalid file format')
+    return redirect(request.url)
+
+
+
+# Confirm event (POST method)
 @main.route('/confirm_event/<int:event_id>', methods=['POST'])
 @login_required
 def confirm_event(event_id):
@@ -808,16 +864,33 @@ def confirm_event(event_id):
     if event:
         event.confirmed = True
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Event confirmed successfully!'})
+        flash('Event confirmed successfully!', 'success')
+        return redirect(url_for('main.event_planner_dashboard'))  # Redirect to dashboard
 
-    return jsonify({'error': 'Event not found'}), 404
-
+    flash('Event not found', 'error')
+    return redirect(url_for('main.event_planner_dashboard'))
 
 
 @main.route('/bar-events')
 def bar_events():
     events = Event.query.filter_by(confirmed=True).all()  # Fetch confirmed events
-    return render_template('bar_events.html', events=events)
+
+    # Example: Select a random image from a list of images
+    images = ['hero 1.jpg', 'hero 2.jpg', 'hero 3.jpg', 'hero 4.jpg', 'hero 5.jpg', 'hero 6.jpg']
+    selected_image = choice(images)  # Choose a random image
+
+    return render_template('bar_events.html', events=events, selected_image=selected_image)
+
+
+
+
+
+
+# Restaurant Page - Shows all available food items
+@main.route('/restaurant')
+def restaurant():
+    available_food_items = Food.query.filter_by(status='Available').all()
+    return render_template('restaurant.html', available_food_items=available_food_items)
 
 
 # Restaurant Menu - Displays available food items
@@ -828,13 +901,6 @@ def restaurant_menu():
     is_open = 9 <= datetime.now().hour <= 21
     food_items = [{'id': food.id, 'name': food.name, 'price': food.price} for food in result]
     return render_template('restaurant_menu.html', available_food_items=food_items, is_open=is_open)
-
-
-# Restaurant Page - Shows all available food items
-@main.route('/restaurant')
-def restaurant():
-    available_food_items = Food.query.filter_by(status='Available').all()
-    return render_template('restaurant.html', available_food_items=available_food_items)
 
 
 # Restaurant Dashboard - For restaurant tenders to manage the menu
@@ -952,41 +1018,54 @@ def restaurant_open_stock():
     return render_template('restaurant_open_stock.html')
 
 
-# Subtract stock from the food item
 @main.route('/subtract_food/<int:food_id>', methods=['POST'])
 def subtract_food(food_id):
     food = Food.query.get_or_404(food_id)
-    quantity_used = int(request.form['quantity_used'])
+    try:
+        quantity_used = float(request.form['quantity_used'])
+    except ValueError:
+        flash("Invalid quantity.", "error")
+        return redirect(url_for('main.restaurant_dashboard'))
 
     if quantity_used > food.quantity:
         flash("Quantity used exceeds available stock.", 'error')
         return redirect(url_for('main.restaurant_dashboard'))
 
+    # Record the current stock before sale (optional, if you use a StockMovement model)
     open_stock = food.quantity
+
+    # Update the Food record
     food.quantity -= quantity_used
+    food.sold_quantity += quantity_used
     closed_stock = food.quantity
 
-    stock_entry = StockMovement(
-        food_id=food_id,
-        open_stock=open_stock,
-        closed_stock=closed_stock,
-        quantity_used=quantity_used
+    # Calculate the total amount for this sale.
+    # (Make sure your Food model’s price is set when adding the food item)
+    sale_total = quantity_used * (food.price if food.price else 0)
+
+    # Create a new SoldFood record
+    sold_food_record = SoldFood(
+        food_name=food.name,
+        quantity=quantity_used,
+        total_amount=sale_total
     )
-    db.session.add(stock_entry)
+    db.session.add(sold_food_record)
+
+    # (Optional) If you are using a StockMovement model, update it here.
+    # stock_entry = StockMovement(food_id=food_id, open_stock=open_stock,
+    #                             closed_stock=closed_stock, quantity_used=quantity_used)
+    # db.session.add(stock_entry)
+
     db.session.commit()
 
-    food.remaining_quantity = closed_stock
-    db.session.commit()
-    flash("Stock subtracted successfully.", 'success')
-
+    flash("Stock subtracted and sale recorded successfully.", 'success')
     return redirect(url_for('main.restaurant_dashboard'))
 
 
-# Restaurant Closing Stock - View closing stock summary
 @main.route('/restaurant_closing_stock')
 def restaurant_closing_stock():
-    closing_stock = get_closing_stock()  # Assuming this function is defined elsewhere
-    return render_template('restaurant_closing_stock.html', closing_stock=closing_stock)
+    sold_food_records = SoldFood.query.order_by(SoldFood.sold_date.desc()).all()
+    return render_template('restaurant_closing_stock.html', sold_food_records=sold_food_records)
 
 
 # Route to download the activity report as CSV

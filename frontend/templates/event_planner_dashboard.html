@@ -18,6 +18,12 @@
             padding: 20px;
             overflow-y: auto;
         }
+        .event-image-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -30,7 +36,7 @@
 
     <div class="main-content">
         <h2>Plan a New Event</h2>
-        <form method="POST" id="eventForm">
+        <form method="POST" id="eventForm" enctype="multipart/form-data">
             <div class="mb-3">
                 <input type="text" name="name" class="form-control" placeholder="Event Name" required>
             </div>
@@ -43,6 +49,20 @@
             <div class="mb-3">
                 <textarea name="description" class="form-control" placeholder="Event Description" rows="3"></textarea>
             </div>
+            <div class="mb-3">
+                <label for="eventImage" class="form-label">Event Image</label>
+                <input type="file" class="form-control" name="image" id="eventImage" accept="image/*" required>
+                <img id="imagePreview" class="event-image-preview mt-3" src="#" alt="Image Preview" style="display:none;">
+            </div>
+            <div class="mb-3">
+                <select name="category" class="form-select" required>
+                    <option value="" disabled selected>Select Event Category</option>
+                    <option value="Music">Music</option>
+                    <option value="Performance">Performance</option>
+                    <option value="Conference">Conference</option>
+                    <option value="Workshop">Workshop</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-success">Add Event</button>
         </form>
 
@@ -54,6 +74,8 @@
                     <th>Date</th>
                     <th>Time</th>
                     <th>Description</th>
+                    <th>Category</th>
+                    <th>Image</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -64,6 +86,8 @@
                         <td>{{ event.date }}</td>
                         <td>{{ event.time }}</td>
                         <td>{{ event.description }}</td>
+                        <td>{{ event.category }}</td>
+                        <td><img src="{{ event.image_url }}" alt="{{ event.name }}" class="event-image-preview" /></td>
                         <td>
                             <form method="POST" action="{{ url_for('main.confirm_event', event_id=event.id) }}">
                                 <button type="submit" class="btn btn-primary btn-sm">Confirm</button>
@@ -80,6 +104,19 @@
             alert('Logging out...');
             window.location.href = 'login.html';
         }
+
+        // Image Preview Function
+        const imageInput = document.getElementById('eventImage');
+        const imagePreview = document.getElementById('imagePreview');
+
+        imageInput.addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imagePreview.src = event.target.result;
+                imagePreview.style.display = 'block'; // Display the image
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
     </script>
 
     <!-- Bootstrap JS and Dependencies -->

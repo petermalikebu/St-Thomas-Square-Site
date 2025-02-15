@@ -70,14 +70,14 @@
     </div>
 
     <div class="content">
-        <h3>Food Inventory</h3>
+        <h3>Open Stock</h3>
         <table class="table table-bordered">
             <thead class="thead-dark">
                 <tr>
                     <th>Food Name</th>
                     <th>Quantity</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th>Sold Value</th>
                 </tr>
             </thead>
             <tbody>
@@ -105,41 +105,10 @@
             </tbody>
         </table>
 
-        <h3>Stock Movements (Open & Closed Stock)</h3>
-        <table class="table table-bordered">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Food Name</th>
-                    <th>Open Stock</th>
-                    <th>Closed Stock</th>
-                    <th>Quantity Used</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stock in stock_movements %}
-                <tr>
-                    <td>{{ stock.food_name }}</td>
-                    <td>{{ stock.open_stock }}</td>
-                    <td>{{ stock.closed_stock }}</td>
-                    <td>{{ stock.quantity_used }}</td>
-                    <td>
-                        <!-- Only update if there's available stock -->
-                        {% if stock.closed_stock > 0 %}
-                        <form action="{{ url_for('main.update_stock', food_id=stock.food_id) }}" method="POST" style="display:inline;">
-                            <input type="number" name="quantity_used" placeholder="Used Quantity" required max="{{ stock.closed_stock }}">
-                            <button type="submit" class="btn btn-primary">Update</button>
-                        </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
+ </body>
 </html>

@@ -95,13 +95,16 @@ class Event(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
-    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    date = db.Column(db.DateTime, nullable=False)
     location = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    confirmed = db.Column(db.Boolean, default=False)  # Track if event is confirmed
+    time = db.Column(db.String(5), nullable=False)  # Add time field
+    confirmed = db.Column(db.Boolean, default=False)
+    image_url = db.Column(db.String(200), nullable=True)  # New attribute for storing image URL
 
     def __repr__(self):
         return f"<Event {self.name} on {self.date}>"
+
 
 class Staff(db.Model):
     __tablename__ = 'staff'
@@ -231,6 +234,24 @@ class Beer(db.Model):
     def total_value(self):
         return self.price_per_bottle * self.quantity
 
+class SalesTransaction(db.Model):
+    __tablename__ = 'sales_transaction'
+
+    id = db.Column(db.Integer, primary_key=True)
+    bartender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    beer_id = db.Column(db.Integer, db.ForeignKey('beer_stock.id'), nullable=False)
+    quantity_sold = db.Column(db.Integer, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    bartender = db.relationship('User', backref='sales_transactions')
+    beer = db.relationship('BeerStock', backref='sales_transactions')
+
+    def __repr__(self):
+        return f"<SalesTransaction {self.quantity_sold} of {self.beer.name} for {self.total_price}>"
+
+
+
 class Food(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -271,3 +292,13 @@ class ActivityLog(db.Model):
 
     def __repr__(self):
         return f"<ActivityLog {self.activity_type} at {self.timestamp}>"
+
+class SoldFood(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    food_name = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    sold_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<SoldFood {self.food_name} - {self.quantity}>"
