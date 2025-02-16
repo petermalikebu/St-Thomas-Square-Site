@@ -242,6 +242,7 @@ class SalesTransaction(db.Model):
     beer_id = db.Column(db.Integer, db.ForeignKey('beer_stock.id'), nullable=False)
     quantity_sold = db.Column(db.Integer, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
+    cash_in_hand = db.Column(db.Float, nullable=False)  # Added this field for consistency
     transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
 
     bartender = db.relationship('User', backref='sales_transactions')
@@ -262,6 +263,7 @@ class Food(db.Model):
     sold_quantity = db.Column(db.Float, default=0)  # Quantity sold
     open_stock = db.Column(db.Float, default=0)  # Open stock
     closed_stock = db.Column(db.Float, default=0)  # Closed stock
+    total_amount_sold = db.Column(db.Float, default=0.0)  # New attribute for total amount sold
 
     def __repr__(self):
         return f"<Food {self.name}>"

@@ -113,7 +113,6 @@
         <button type="button" onclick="showBeers()">View Available Beers</button>
         <button type="button" onclick="showSelected()">My Selected Beers</button>
         <button type="button" onclick="showSalesForm()">Record Sales</button>
-        <button type="button" onclick="location.href='{{ url_for('main.beer_total_sales') }}'">View Beer Total Sales</button>
         <button type="button" onclick="location.href='{{ url_for('main.view_closed_stock') }}'">View Closed Stocks</button>
         <form action="{{ url_for('main.logout') }}" method="POST">
             <button type="submit" class="logout-btn">Logout</button>
@@ -213,31 +212,29 @@
             </form>
         </div>
 
-        <!-- Sales Transactions -->
-        <div id="sales-transactions" style="display: none;">
-            <h4>Sales Transactions</h4>
+        <!-- Total Sales -->
+        <div id="total-sales" style="display: none;">
+            <h4>Total Sales</h4>
             <table>
                 <thead>
                     <tr>
                         <th>Beer Name</th>
-                        <th>Quantity Sold</th>
-                        <th>Sale Type</th>
+                        <th>Total Quantity Sold</th>
                         <th>Total Revenue (MWK)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for transaction in transactions %}
+                    {% for beer, total_quantity, total_revenue in total_sales %}
                     <tr>
-                        <td>{{ transaction.beer.name }}</td>
-                        <td>{{ transaction.quantity_sold }}</td>
-                        <td>{{ transaction.sale_type }}</td>
-                        <td>{{ transaction.total_price }} MWK</td>
+                        <td>{{ beer.name }}</td>
+                        <td>{{ total_quantity }}</td>
+                        <td>{{ total_revenue }} MWK</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
+
 
     <script>
         function showBeers() {

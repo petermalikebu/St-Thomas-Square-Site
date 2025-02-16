@@ -1,17 +1,27 @@
+
+from flask import send_file
 import os
-from functools import wraps
 from datetime import datetime
+from functools import wraps
+from random import choice
+
+import matplotlib
+
+matplotlib.use('Agg')  # Use non-GUI backend before importing pyplot
+
+import matplotlib.pyplot as plt
 import pandas as pd
-import plotly.express as px
 from flask import Blueprint
 from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import current_user
+
+from fpdf import FPDF
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from sqlalchemy import case
-from sqlalchemy import func
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
+
 from backend.app import login_manager  # Import the login_manager
 from backend.models import ActivityLog
 from backend.models import BarStock
@@ -20,10 +30,9 @@ from backend.models import BartenderTransaction
 from backend.models import Beer  # Adjust the path based on your app structure
 from backend.models import BeerStock, OpenStockModel
 from backend.models import Event
-from backend.models import Room,SalesTransaction
+from backend.models import Room, SalesTransaction
 from backend.models import User, db  # Import models and db from the correct location
 from .models import StockMovement, Food, ClosedStock, SoldFood
-from random import choice
 
 main = Blueprint('main', __name__)
 report_dir = os.path.join(os.getcwd(), 'reports')
@@ -82,6 +91,7 @@ if not os.path.exists(report_dir):
     os.makedirs(report_dir)
 
 def get_closing_stock():
+    # noinspection PyTypeChecker
     closing_stock = db.session.query(
         Food.id,
         Food.name,
@@ -97,6 +107,56 @@ def get_closing_stock():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+def generate_restaurant_report():
+    print("Generating report...")  # Debugging step
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", style='B', size=16)
+    pdf.cell(200, 10, "Restaurant Management Report", ln=True, align='C')
+    pdf.ln(10)
+
+    # Fetch data from database
+    food_items = Food.query.all()
+    sold_items = SoldFood.query.all()
+    total_revenue = sum(item.total_amount for item in sold_items)
+
+    # Sales Chart
+    print("Generating sales chart...")  # Debugging step
+    food_names = [food.name for food in food_items]
+    quantities_sold = [food.sold_quantity for food in food_items]
+
+    plt.figure(figsize=(6, 4))
+    plt.bar(food_names, quantities_sold, color='blue')
+    plt.xlabel('Food Items')
+    plt.ylabel('Quantity Sold')
+    plt.title('Food Sales Overview')
+    plt.xticks(rotation=45)
+
+    # Save chart
+    chart_path = os.path.join(BASE_DIR, "static", "reports", "sales_chart.png")
+    os.makedirs(os.path.dirname(chart_path), exist_ok=True)  # Ensure directory exists
+    plt.savefig(chart_path, format='png')
+    plt.close()
+    print(f"Chart saved at: {chart_path}")  # Debugging step
+
+    # Embed chart in PDF
+    pdf.image(chart_path, x=10, y=pdf.get_y(), w=180)
+    pdf.ln(60)
+
+    # Save PDF
+    report_path = os.path.join(BASE_DIR, "static", "reports", "restaurant_report.pdf")
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)  # Ensure directory exists
+    pdf.output(report_path)
+    print(f"Report saved at: {report_path}")  # Debugging step
+
+    return report_path
 
 
 
@@ -580,12 +640,10 @@ def bartender_select_beer():
 @main.route('/bartender/record-sales', methods=['POST'])
 @login_required
 def record_sales():
-    # Ensure only bartenders can record sales
     if session.get('user_role') != 'bartender':
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    # Extract form data safely
     try:
         beer_id = int(request.form.get('beer_id', 0))
         quantity_sold = int(request.form.get('quantity_sold', 0))
@@ -594,67 +652,45 @@ def record_sales():
         flash('Invalid form data!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Validate form input values
     if not beer_id or quantity_sold <= 0 or cash_in_hand < 0:
         flash('Invalid sale details. Please check your inputs.', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Check if the beer exists in the BartenderStock
-    bartender_stock = BartenderStock.query.filter_by(
-        bartender_id=session.get('user_id'),
-        beer_id=beer_id
-    ).first()
+    bartender_stock = BartenderStock.query.filter_by(bartender_id=session.get('user_id'), beer_id=beer_id).first()
 
     if not bartender_stock:
         flash('Beer not found in your stock!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Check if enough stock is available in BartenderStock
     if bartender_stock.quantity < quantity_sold:
         flash('Not enough stock available in your stock!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Check if the beer exists in the BeerStock database
     beer = BeerStock.query.get(beer_id)
     if not beer:
         flash('Beer not found in the database!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    # Validate cash in hand is sufficient
     total_price = beer.price_per_bottle * quantity_sold
     if cash_in_hand < total_price:
         flash('Insufficient cash in hand!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
     try:
-        # Update the quantity in BartenderStock
         bartender_stock.quantity -= quantity_sold
-        bartender_stock.total_value -= total_price  # Update total value if needed
-        db.session.commit()  # Commit the changes to BartenderStock
+        bartender_stock.total_value -= total_price
+        db.session.commit()
 
-        # Record the bartender transaction
-        new_transaction = BartenderTransaction(
+        new_transaction = SalesTransaction(
             bartender_id=session.get('user_id'),
             beer_id=beer_id,
             quantity_sold=quantity_sold,
             total_price=total_price,
-            sale_type="bottle",  # Sale type is fixed to 'bottle'
+            cash_in_hand=cash_in_hand,
             transaction_date=datetime.utcnow()
         )
         db.session.add(new_transaction)
 
-        # Record the sales transaction
-        new_sales_transaction = SalesTransaction(
-            bartender_id=session.get('user_id'),  # Add bartender_id
-            beer_id=beer_id,
-            quantity_sold=quantity_sold,
-            total_price=total_price,
-            cash_in_hand=cash_in_hand,
-            transaction_date=datetime.utcnow()  # Add transaction date
-        )
-        db.session.add(new_sales_transaction)
-
-        # Commit database changes
         db.session.commit()
 
         flash('Sale recorded successfully!', 'success')
@@ -666,23 +702,72 @@ def record_sales():
 
 
 
-@main.route('/beer_total_sales', methods=['GET'])
+@main.route('/submit_sale', methods=['POST'])
+def submit_sale():
+    if request.method == 'POST':
+        try:
+            bartender_id = session.get('user_id')
+            beer_id = int(request.form['beer_id'])
+            quantity_sold = int(request.form['quantity_sold'])
+        except (KeyError, ValueError):
+            flash('Invalid form data!', 'danger')
+            return redirect(url_for('sales_page'))
+
+        beer = BeerStock.query.get(beer_id)
+        if not beer or beer.quantity < quantity_sold:
+            flash("Not enough stock available!", "danger")
+            return redirect(url_for('sales_page'))
+
+        total_price = beer.price_per_bottle * quantity_sold
+
+        new_sale = SalesTransaction(
+            bartender_id=bartender_id,
+            beer_id=beer_id,
+            quantity_sold=quantity_sold,
+            total_price=total_price,
+            cash_in_hand=total_price  # Use the total price for the cash_in_hand
+        )
+        db.session.add(new_sale)
+
+        beer.quantity -= quantity_sold
+        beer.total_value = beer.quantity * beer.price_per_bottle
+
+        closed_stock = ClosedStock.query.filter_by(beer_id=beer_id).first()
+        if closed_stock:
+            closed_stock.quantity += quantity_sold
+            closed_stock.total_value += total_price
+        else:
+            closed_stock = ClosedStock(
+                beer_id=beer_id,
+                quantity=quantity_sold,
+                total_value=total_price
+            )
+            db.session.add(closed_stock)
+
+        db.session.commit()
+
+        flash("Sale recorded successfully!", "success")
+        return redirect(url_for('view_closed_stock'))
+
+
+
+@main.route('/total_sales')
+def total_sales():
+    total_sales = db.session.query(db.func.sum(SalesTransaction.total_price)).scalar()
+    return render_template('total_sales.html', total_sales=total_sales)
+
+@main.route('/view-closed-stock')
 @login_required
-def beer_total_sales():
-    # Ensure only bartenders can view sales
-    if session.get('user_role') != 'bartender':
+def view_closed_stock():
+    if session.get('user_role') not in ['bartender', 'admin']:
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    # Retrieve all sales transactions for the logged-in bartender
-    sales = SalesTransaction.query.filter_by(bartender_id=session.get('user_id')).all()
+    sales_transactions = SalesTransaction.query.all()
 
-    return render_template('beer_total_sales.html', sales=sales)
+    return render_template('view_closed_stock.html', sales_transactions=sales_transactions)
 
-@main.route('/view_closed_stock')
-def view_closed_stock():
-    closed_stocks = ClosedStock.query.all()
-    return render_template('view_closed_stock.html', closed_stocks=closed_stocks)
+
 
 
 @main.route('/submit_sales', methods=['POST'])
@@ -893,15 +978,6 @@ def restaurant():
     return render_template('restaurant.html', available_food_items=available_food_items)
 
 
-# Restaurant Menu - Displays available food items
-@main.route('/menu/restaurant', methods=['GET'])
-@login_required
-def restaurant_menu():
-    result = db.session.execute(text("SELECT * FROM food WHERE type='restaurant' AND status='Available'")).fetchall()
-    is_open = 9 <= datetime.now().hour <= 21
-    food_items = [{'id': food.id, 'name': food.name, 'price': food.price} for food in result]
-    return render_template('restaurant_menu.html', available_food_items=food_items, is_open=is_open)
-
 
 # Restaurant Dashboard - For restaurant tenders to manage the menu
 @main.route('/restaurant_dashboard', methods=['GET'])
@@ -1021,40 +1097,34 @@ def restaurant_open_stock():
 @main.route('/subtract_food/<int:food_id>', methods=['POST'])
 def subtract_food(food_id):
     food = Food.query.get_or_404(food_id)
+
     try:
         quantity_used = float(request.form['quantity_used'])
+        total_amount = float(request.form['total_amount'])  # Get the total amount from form
     except ValueError:
-        flash("Invalid quantity.", "error")
+        flash("Invalid input values.", "error")
         return redirect(url_for('main.restaurant_dashboard'))
 
     if quantity_used > food.quantity:
         flash("Quantity used exceeds available stock.", 'error')
         return redirect(url_for('main.restaurant_dashboard'))
 
-    # Record the current stock before sale (optional, if you use a StockMovement model)
-    open_stock = food.quantity
-
-    # Update the Food record
+    open_stock = food.quantity  # Store initial stock
     food.quantity -= quantity_used
     food.sold_quantity += quantity_used
-    closed_stock = food.quantity
 
-    # Calculate the total amount for this sale.
-    # (Make sure your Food model’s price is set when adding the food item)
-    sale_total = quantity_used * (food.price if food.price else 0)
+    # Update total amount sold for the food item
+    food.total_amount_sold = (food.total_amount_sold or 0) + total_amount
 
-    # Create a new SoldFood record
+    closed_stock = food.quantity  # Remaining stock after sale
+
+    # Create a SoldFood record
     sold_food_record = SoldFood(
         food_name=food.name,
         quantity=quantity_used,
-        total_amount=sale_total
+        total_amount=total_amount  # Store the user-entered total amount
     )
     db.session.add(sold_food_record)
-
-    # (Optional) If you are using a StockMovement model, update it here.
-    # stock_entry = StockMovement(food_id=food_id, open_stock=open_stock,
-    #                             closed_stock=closed_stock, quantity_used=quantity_used)
-    # db.session.add(stock_entry)
 
     db.session.commit()
 
@@ -1065,40 +1135,82 @@ def subtract_food(food_id):
 @main.route('/restaurant_closing_stock')
 def restaurant_closing_stock():
     sold_food_records = SoldFood.query.order_by(SoldFood.sold_date.desc()).all()
-    return render_template('restaurant_closing_stock.html', sold_food_records=sold_food_records)
+
+    # Calculate total revenue from all sold food items
+    total_amount = sum(record.total_amount for record in sold_food_records)
+
+    return render_template(
+        'restaurant_closing_stock.html',
+        sold_food_records=sold_food_records,
+        total_amount=total_amount
+    )
 
 
-# Route to download the activity report as CSV
-@main.route('/download_activity_report')
+@main.route('/menu/restaurant', methods=['GET'])
 @login_required
-def download_activity_report():
-    if session.get('user_role') != 'admin':
-        flash('Access denied!', 'error')
-        return redirect(url_for('main.dashboard'))
+def restaurant_menu():
+    # Get available food items
+    result = db.session.execute(
+        text("SELECT * FROM food WHERE type='restaurant' AND status='Available'")
+    ).fetchall()
 
-    logs = ActivityLog.query.all()
-    output = StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Activity Type', 'Description', 'Timestamp'])
-    for log in logs:
-        writer.writerow([log.activity_type, log.description, log.timestamp])
+    is_open = 4 <= datetime.now().hour <= 21
+    food_items = [{'id': food.id, 'name': food.name, 'price': food.price} for food in result]
 
-    output.seek(0)
-    return send_file(output, mimetype='text/csv', as_attachment=True,
-                     download_name="restaurant_activity_report.csv")
+    # Get sold food records
+    sold_food_records = SoldFood.query.order_by(SoldFood.sold_date.desc()).all()
+    total_amount = sum(record.total_amount for record in sold_food_records)
 
-# Generate and save a bar chart for orders per food item
-@main.route('/orders_report')
-def orders_report():
-    order_data = db.session.query(Food.name, func.sum(ActivityLog.quantity_ordered).label('total_orders')) \
-        .join(ActivityLog, ActivityLog.food_id == Food.id) \
-        .group_by(Food.name).all()
+    return render_template(
+        'restaurant_menu.html',
+        available_food_items=food_items,
+        is_open=is_open,
+        sold_food_records=sold_food_records,
+        total_amount=total_amount
+    )
 
-    df = pd.DataFrame(order_data, columns=['Food', 'Total Orders'])
-    fig = px.bar(df, x='Food', y='Total Orders', title='Food Orders Report')
 
-    fig.write_html("static/reports/orders_report.html")
-    return send_file("static/reports/orders_report.html", mimetype='text/html')
+@main.route('/delete_sold_food/<int:record_id>', methods=['POST'])
+@login_required
+def delete_sold_food(record_id):
+    # Check if the logged-in user is an admin
+    if not current_user.is_admin:
+        flash("Unauthorized action!", "danger")
+        return redirect(url_for('main.restaurant_menu'))
+
+    # Find and delete the sold food record
+    record = SoldFood.query.get_or_404(record_id)
+    db.session.delete(record)
+    db.session.commit()
+
+    flash("Sold food record deleted successfully!", "success")
+    return redirect(url_for('main.restaurant_menu'))
+
+
+@main.route('/download_restaurant_report')
+@login_required
+def download_restaurant_report():
+    # Ensure the report can only be downloaded during open hours
+    if not (4 <= datetime.now().hour <= 21):  # Match restaurant_menu hours
+        flash("The restaurant is closed. The report can only be downloaded during open hours.", "warning")
+        return redirect(url_for('main.restaurant_menu'))
+
+    # Generate the report before attempting to download
+    report_path = generate_restaurant_report()
+
+    # Verify the report exists
+    if not os.path.exists(report_path):
+        flash("Report file is missing. Please contact support.", "danger")
+        return redirect(url_for('main.restaurant_menu'))
+
+    # Check if the PDF file is empty
+    if os.path.getsize(report_path) == 0:
+        flash("Failed to generate a valid report. Please try again.", "danger")
+        return redirect(url_for('main.restaurant_menu'))
+
+    print(f"Report ready for download: {report_path}")  # Debugging step
+    return send_file(report_path, as_attachment=True, download_name="restaurant_report.pdf")
+
 
 
 @main.route('/rooms', methods=['GET'])
