@@ -158,6 +158,60 @@ def generate_restaurant_report():
 
     return report_path
 
+def generate_bartender_report():
+    print("Generating bartender report...")  # Debugging step
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", style='B', size=16)
+    pdf.cell(200, 10, "Bartender Report", ln=True, align='C')
+    pdf.ln(10)
+
+    # Fetch data from database
+    bartender_stocks = BartenderStock.query.all()
+    sales_transactions = SalesTransaction.query.all()
+
+    # Prepare data for the chart (Beer Sales Overview)
+    beer_names = [beer.name for beer in BeerStock.query.all()]
+    quantities_sold = [sum(
+        transaction.quantity_sold for transaction in sales_transactions if transaction.beer_id == beer.id
+    ) for beer in BeerStock.query.all()]
+
+    # Generate the sales chart
+    print("Generating sales chart...")  # Debugging step
+    plt.figure(figsize=(6, 4))
+    plt.bar(beer_names, quantities_sold, color='green')
+    plt.xlabel('Beer Items')
+    plt.ylabel('Quantity Sold')
+    plt.title('Beer Sales Overview')
+    plt.xticks(rotation=45)
+
+    # Save chart to file
+    chart_path = os.path.join(BASE_DIR, "static", "reports", "bartender_sales_chart.png")
+    os.makedirs(os.path.dirname(chart_path), exist_ok=True)  # Ensure directory exists
+    plt.savefig(chart_path, format='png')
+    plt.close()
+    print(f"Chart saved at: {chart_path}")  # Debugging step
+
+    # Embed chart in PDF
+    pdf.image(chart_path, x=10, y=pdf.get_y(), w=180)
+    pdf.ln(60)
+
+    # Add a summary of sales transactions to the report
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, "Sales Summary:", ln=True)
+    total_sales = sum(transaction.total_price for transaction in sales_transactions)
+    pdf.multi_cell(0, 10, f"Total Sales: ${total_sales:.2f}")
+
+    # Save PDF file
+    report_path = os.path.join(BASE_DIR, "static", "reports", "bartender_report.pdf")
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)  # Ensure directory exists
+    pdf.output(report_path)
+    print(f"Report saved at: {report_path}")  # Debugging step
+
+    return report_path
+
 
 
 @main.route('/')
@@ -565,6 +619,14 @@ def admin_bar_stock():
 
     return render_template('admin_bar_stock.html')
 
+@main.route('/admin_report', methods=['GET'])
+@login_required
+def admin_report():
+    # Retrieve all sales transactions from the database
+    sales_transactions = SalesTransaction.query.all()  # Assuming SalesTransaction is the model for sales transactions
+    return render_template('admin_report.html', sales_transactions=sales_transactions)
+
+
 @main.route('/bartender_dashboard')
 @login_required
 def bartender_dashboard():
@@ -750,12 +812,6 @@ def submit_sale():
         return redirect(url_for('view_closed_stock'))
 
 
-
-@main.route('/total_sales')
-def total_sales():
-    total_sales = db.session.query(db.func.sum(SalesTransaction.total_price)).scalar()
-    return render_template('total_sales.html', total_sales=total_sales)
-
 @main.route('/view-closed-stock')
 @login_required
 def view_closed_stock():
@@ -769,6 +825,12 @@ def view_closed_stock():
 
 
 
+@main.route('/total_sales')
+def total_sales():
+    total_sales = db.session.query(db.func.sum(SalesTransaction.total_price)).scalar()
+    return render_template('total_sales.html', total_sales=total_sales)
+
+
 
 @main.route('/submit_sales', methods=['POST'])
 def submit_sales():
@@ -776,68 +838,31 @@ def submit_sales():
     pass
 
 
-
-def generate_combined_report():
-    transactions = BartenderTransaction.query.filter_by(
-        bartender_id=current_user.id  # Replaced session.get('user_id')
-    ).all()
-
-    shortages = BartenderTransaction.query.filter(BartenderTransaction.shortage > 0).all()
-
-    filename = os.path.join(report_dir, 'restaurant_report.pdf')
-    os.makedirs(report_dir, exist_ok=True)  # Ensure directory exists
-    c = canvas.Canvas(filename, pagesize=letter)
-
-    # Report Title
-    c.drawString(100, 750, "Restaurant Transactions & Shortage Report")
-    c.drawString(100, 730, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-    # Transactions Section
-    y = 700
-    c.drawString(100, y, "Beer Name")
-    c.drawString(250, y, "Quantity Sold")
-    c.drawString(350, y, "Total Revenue")
-    c.drawString(450, y, "Profit/Shortage")
-
-    y -= 20
-    for transaction in transactions:
-        c.drawString(100, y, transaction.beer.name)
-        c.drawString(250, y, str(transaction.quantity_sold))
-        c.drawString(350, y, f"${transaction.total_price:.2f}")
-        c.drawString(450, y, f"${getattr(transaction, 'profit_or_shortage', 0):.2f}")
-
-        y -= 20
-
-    # Move to new section
-    y -= 40
-    c.drawString(100, y, "Shortage Report")
-
-    y -= 20
-    c.drawString(100, y, "Beer Name")
-    c.drawString(250, y, "Shortage Qty")
-    c.drawString(350, y, "Loss Amount")
-    c.drawString(450, y, "Bartender ID")
-
-    y -= 20
-    for shortage in shortages:
-        c.drawString(100, y, shortage.beer.name)
-        c.drawString(250, y, str(shortage.shortage_quantity))
-        c.drawString(350, y, f"${shortage.loss:.2f}")
-        c.drawString(450, y, str(shortage.bartender_id))
-
-        y -= 20
-
-    c.save()
-
-@main.route('/download_combined_report')
+@main.route('/download_bartender_report')
 @login_required
-def download_combined_report():
-    filename = os.path.join(report_dir, 'restaurant_report.pdf')
+def download_bartender_report():
+    # Ensure the report can only be downloaded during operating hours (you can adjust this as needed)
+    if not (4 <= datetime.now().hour <= 21):  # For example, assuming open hours from 4 AM to 9 PM
+        flash("The bar is closed. The report can only be downloaded during open hours.", "warning")
+        return redirect(url_for('main.bartender_dashboard'))
 
-    if not os.path.exists(filename):
-        return "Report file not found", 404
+    # Generate the bartender report
+    report_path = generate_bartender_report()
 
-    return send_file(filename, as_attachment=True)
+    # Verify if the report exists
+    if not os.path.exists(report_path):
+        flash("Report file is missing. Please contact support.", "danger")
+        return redirect(url_for('main.bartender_dashboard'))
+
+    # Check if the generated PDF is empty
+    if os.path.getsize(report_path) == 0:
+        flash("Failed to generate a valid report. Please try again.", "danger")
+        return redirect(url_for('main.bartender_dashboard'))
+
+    print(f"Bartender report ready for download: {report_path}")  # Debugging step
+    return send_file(report_path, as_attachment=True, download_name="bartender_report.pdf")
+
+
 
 @main.route('/bar_dashboard')
 @login_required

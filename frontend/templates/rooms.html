@@ -1,153 +1,375 @@
-{% extends 'dashboard.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms - St. Thomas Square</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('images/room.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            transition: background-color 0.5s;
+        }
 
-{% block title %}Rooms{% endblock %}
+        body.dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
 
-{% block content %}
-<div class="room-list">
-    <h2>Available Rooms</h2>
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: rgba(11, 226, 94, 0.9);
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
 
-    {% for room in rooms %}
-        <div class="room">
-            <p><strong>Room ID:</strong> {{ room['_id'] }}</p>
-            <p><strong>Price:</strong> {{ room['price'] }} per hour/day</p>
-            <p><strong>Status:</strong> {{ room['status'] }}</p>
+        .header .logo img {
+            height: 50px;
+            width: auto;
+        }
 
-            {% if room['status'] == 'available' %}
-                <form method="POST" action="{{ url_for('main.book_room') }}" class="booking-form" novalidate>
-                    <div class="input-group">
-                        <label for="name">Your Name</label>
-                        <input type="text" name="name" id="name" required placeholder="Enter your full name" aria-label="Your full name">
-                    </div>
+        .header h1 {
+            margin: 0 auto;
+            font-size: 24px;
+        }
 
-                    <div class="input-group">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" name="phone" id="phone" required pattern="^\+?[1-9]\d{1,14}$" placeholder="Enter your phone number" aria-label="Your phone number">
-                    </div>
+        .toggle-button {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+        }
 
-                    <div class="input-group">
-                        <label for="arrival_date">Arrival Date</label>
-                        <input type="date" name="arrival_date" id="arrival_date" required aria-label="Arrival date">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="hours">Duration (in hours)</label>
-                        <input type="number" name="hours" id="hours" required min="1" placeholder="Enter duration in hours" aria-label="Booking duration">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Book Now</button>
-                </form>
-            {% else %}
-                <p>Room is currently booked.</p>
-            {% endif %}
-        </div>
-    {% endfor %}
-</div>
-
-<style>
-    /* General page styling */
-    body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f4f6f9;
-        color: #333;
-        margin: 0;
-        padding: 0;
-    }
-
-    .room-list {
-        width: 100%;
-        max-width: 800px;
-        margin: 50px auto;
-        padding: 30px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .room-list h2 {
-        font-size: 1.8rem;
-        color: #333;
-        text-align: center;
-        margin-bottom: 30px;
-    }
-
-    .room {
-        margin-bottom: 30px;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .room p {
-        margin-bottom: 10px;
-        font-size: 1rem;
-    }
-
-    .input-group {
-        margin-bottom: 20px;
-    }
-
-    .input-group label {
-        font-size: 1rem;
-        color: #555;
-        margin-bottom: 5px;
-        display: block;
-    }
-
-    .input-group input {
-        width: 100%;
-        padding: 12px;
-        font-size: 1rem;
-        color: #333;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        transition: border-color 0.3s ease;
-    }
-
-    .input-group input:focus {
-        outline: none;
-        border-color: #007bff;
-    }
-
-    .btn {
-        width: 100%;
-        padding: 12px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-    .btn:hover {
-        background-color: #0056b3;
-    }
-
-    /* Mobile responsiveness */
-    @media screen and (max-width: 600px) {
-        .room-list {
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
             padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background 0.5s;
         }
 
-        .room-list h2 {
-            font-size: 1.5rem;
+        .container.dark-mode {
+            background: rgba(18, 18, 18, 0.9);
         }
 
-        .room-list p {
-            font-size: 0.9rem;
+        h1, h2 {
+            text-align: center;
         }
 
-        .room {
+        .room-list {
+            margin: 20px 0;
+        }
+
+        .room-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            transition: transform 0.3s;
+        }
+
+        .room-item:hover {
+            transform: scale(1.02);
+        }
+
+        .room-item button {
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .room-item button:hover {
+            background: #45a049;
+        }
+
+        .booking-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .booking-section input, .booking-section select, .booking-section button {
+            display: block;
+            width: 90%;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .booking-section button {
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .booking-section button:hover {
+            background: #45a049;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .gallery img {
+            width: 100%;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.05);
+        }
+
+        .reviews {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .review {
+            display: none;
+        }
+
+        .review.active {
+            display: block;
+        }
+
+        .whatsapp-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25D366;
+            color: white;
+            border-radius: 50%;
             padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
         }
 
-        .input-group input,
-        .btn {
-            font-size: 0.9rem;
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
         }
-    }
-</style>
 
-{% endblock %}
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .price-summary {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .price-summary span {
+            font-weight: bold;
+        }
+
+        .background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <video autoplay loop muted class="background-video">
+        <source src="path/to/your/video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="header">
+        <div class="logo">
+            <img src="../static/images/logo.png" alt="St. Thomas Square Logo">
+        </div>
+        <h1>St. Thomas Square</h1>
+        <button class="toggle-button" onclick="toggleDarkMode()">🌙</button>
+    </div>
+
+    <div class="container">
+        <h1>Rooms</h1>
+        <h2>Available Rooms</h2>
+        <div class="room-list">
+            <div class="room-item" data-status="available">
+                <span>Room 1 - MWK 90,000 per night <span class="status">✅ Available</span></span>
+                <button onclick="selectRoom('Room 1', 90000)">Select</button>
+            </div>
+            <div class="room-item" data-status="booked">
+                <span>Room 2 - MWK 140,000 per night <span class="status">❌ Booked</span></span>
+                <button disabled>Unavailable</button>
+            </div>
+            <div class="room-item" data-status="available">
+                <span>Room 3 - MWK 250,000 per night <span class="status">✅ Available</span></span>
+                <button onclick="selectRoom('Room 3', 250000)">Select</button>
+            </div>
+            <div class="room-item" data-status="available">
+                <span>Room 4 - MWK 320,000 per night <span class="status">✅ Available</span></span>
+                <button onclick="selectRoom('Room 4', 320000)">Select</button>
+            </div>
+        </div>
+
+        <div id="bookingSection" class="booking-section">
+            <h2>Booking Details</h2>
+            <input type="text" id="roomDetails" readonly>
+            <label for="name">Your Name</label>
+            <input type="text" id="name" placeholder="Enter Your Name" required>
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" placeholder="Enter Your Phone Number" required>
+            <label for="arrivalDate">Arrival Date</label>
+            <input type="date" id="arrivalDate" required>
+            <label for="duration">Duration</label>
+            <select id="duration" required>
+                <option value="">Select Duration</option>
+                <option value="1 Night">1 Night</option>
+                <option value="2 Nights">2 Nights</option>
+                <option value="3 Nights">3 Nights</option>
+            </select>
+            <div class="price-summary">
+                <span>Total Price: MWK <span id="totalPrice">0</span></span>
+            </div>
+            <button onclick="submitBooking()">Book</button>
+        </div>
+
+        <h2>Customer Reviews</h2>
+        <div class="reviews">
+            <div class="review active">"Great experience! The staff was friendly and the rooms were clean!" - John Doe</div>
+            <div class="review">"I loved the ambiance and the service was top-notch!" - Jane Smith</div>
+            <div class="review">"A perfect getaway! Highly recommend!" - Alice Johnson</div>
+            <button onclick="nextReview()">Next Review</button>
+        </div>
+
+        <h2>Gallery</h2>
+        <div class="gallery">
+            <img src="../static/images/room.jpeg" alt="Room Image 1">
+            <img src="../static/images/room1.jpg" alt="Room Image 2">
+            <img src="../static/images/room2.jpg" alt="Room Image 3">
+            <img src="../static/images/room3.jpg" alt="Room Image 4">
+            <img src="../static/images/room4.jpg" alt="Room Image 5">
+        </div>
+    </div>
+
+    <div class="whatsapp-button" onclick="openWhatsApp()">
+        📞
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Booking Confirmation</h2>
+            <p id="modalDetails"></p>
+            <button onclick="confirmBooking()">Confirm Booking</button>
+        </div>
+    </div>
+
+    <script>
+        let totalPrice = 0;
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.container').classList.toggle('dark-mode');
+        }
+
+        function selectRoom(room, priceMWK) {
+            document.getElementById('bookingSection').style.display = 'block';
+            document.getElementById('roomDetails').value = `${room} - MWK ${priceMWK.toLocaleString()}`;
+            totalPrice = priceMWK * (document.getElementById('duration').value ? parseInt(document.getElementById('duration').value) : 1);
+            document.getElementById('totalPrice').innerText = totalPrice.toLocaleString();
+        }
+
+        function submitBooking() {
+            const roomDetails = document.getElementById('roomDetails').value;
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const arrivalDate = document.getElementById('arrivalDate').value;
+            const duration = document.getElementById('duration').value;
+
+            if (name && phone && arrivalDate && duration) {
+                const message = `New Booking!\n${roomDetails}\nName: ${name}\nPhone: ${phone}\nArrival Date: ${arrivalDate}\nDuration: ${duration}\nTotal Price: MWK ${totalPrice.toLocaleString()}`;
+                document.getElementById('modalDetails').innerText = message;
+                document.getElementById('bookingModal').style.display = 'block';
+            } else {
+                alert('Please fill out all fields.');
+            }
+        }
+
+        function confirmBooking() {
+            const whatsappNumber = "265993609184"; // Your WhatsApp number (with country code)
+            const message = document.getElementById('modalDetails').innerText;
+            window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+        }
+
+        function openWhatsApp() {
+            const whatsappNumber = "265993609184"; // Your WhatsApp number (with country code)
+            window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+        }
+
+        function nextReview() {
+            const reviews = document.querySelectorAll('.review');
+            let currentIndex = Array.from(reviews).findIndex(review => review.classList.contains('active'));
+            reviews[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + 1) % reviews.length;
+            reviews[currentIndex].classList.add('active');
+        }
+
+        document.getElementById('duration').addEventListener('change', function() {
+            const pricePerNight = parseInt(document.getElementById('roomDetails').value.split(' - MWK ')[1].replace(/,/g, ''));
+            const nights = parseInt(this.value);
+            totalPrice = pricePerNight * nights;
+            document.getElementById('totalPrice').innerText = totalPrice.toLocaleString();
+        });
+    </script>
+</body>
+</html>

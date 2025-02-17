@@ -251,6 +251,12 @@ class SalesTransaction(db.Model):
     def __repr__(self):
         return f"<SalesTransaction {self.quantity_sold} of {self.beer.name} for {self.total_price}>"
 
+    # Adding a method to fetch the beer name
+    @property
+    def beer_name(self):
+        return self.beer.name if self.beer else 'Unknown Beer'
+
+
 
 
 class Food(db.Model):

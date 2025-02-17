@@ -6,16 +6,10 @@
     <title>Closed Sales Transactions</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         body {
             background-color: #f8f9fa;
             transition: background 0.5s, color 0.5s;
-        }
-        .logo {
-            width: 150px;
-            display: block;
-            margin: auto;
         }
         table {
             width: 100%;
@@ -43,43 +37,28 @@
             color: red;
             font-weight: bold;
         }
-        .dark-mode {
-            background-color: #343a40;
-            color: white;
-        }
-        /* Logo Container */
         .logo {
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 20px 0;
-            transition: transform 0.3s ease-in-out; /* Adds a smooth hover effect */
+            transition: transform 0.3s ease-in-out;
         }
-
-        /* Logo Image */
         .logo img {
-            max-width: 200px; /* Adjust size */
+            max-width: 200px;
             height: auto;
-            transition: transform 0.3s ease-in-out; /* Smooth scaling */
+            transition: transform 0.3s ease-in-out;
         }
-
-        /* Hover Effect */
         .logo img:hover {
-            transform: scale(1.1); /* Slight zoom-in effect when hovered */
+            transform: scale(1.1);
         }
-
-
-
-
     </style>
 </head>
 <body>
-
 <div class="container mt-5">
-    <!-- Logo -->
     <div class="logo">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
-        </div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
+    </div>
     <h2 class="text-center">Closed Sales Transactions</h2>
 
     <!-- Search Bar -->
@@ -132,7 +111,6 @@
             </tr>
             {% endfor %}
         </tbody>
-
     </table>
     {% else %}
     <p class="text-center text-danger">No sales transactions found.</p>

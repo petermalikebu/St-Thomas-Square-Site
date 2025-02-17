@@ -136,6 +136,7 @@
             <ul class="sidebar-links">
                 <li><a href="{{ url_for('main.dashboard') }}" class="text-white">Go to Dashboard</a></li>
                 <li><a href="{{ url_for('main.admin_dashboard') }}" class="text-white">Admin Dashboard</a></li>
+                <li><a href="{{ url_for('main.admin_report') }}" class="text-white">Report</a></li>
                 <li><a href="{{ url_for('main.admin_bar_stock') }}" class="text-white">Bar Stock</a></li>
             </ul>
             <button class="logout-button">Logout</button>
@@ -177,7 +178,7 @@
 
                 <!-- Link to Admin Bar Stock -->
                 <a href="{{ url_for('main.admin_bar_stock') }}" class="btn btn-primary mt-4">Go to Bar Stock Management</a>
-                <a href="{{ url_for('main.download_combined_report') }}" class="btn btn-success mt-3">Download Bar Report</a>
+                <a href="{{ url_for('main.download_bartender_report') }}" class="btn btn-success mt-3">Download Bartender Report</a>
 
 
             </div>
