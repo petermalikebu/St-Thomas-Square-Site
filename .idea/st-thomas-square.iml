@@ -5,7 +5,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.venv1" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.13 (st-thomas-square-main)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12 (St-Thomas-Square-Site)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="bootstrap" level="application" />
   </component>
 </module>

@@ -1,118 +1,121 @@
 {% extends 'dashboard.html' %}
 
-{% block title %}Profile{% endblock %}
+{% block title %}Admin Profile{% endblock %}
 
 {% block content %}
 <div class="profile-container">
-    <h2>Change Admin Profile</h2>
+    <h2>Update Admin Profile</h2>
     <form method="POST" class="profile-form" novalidate>
         <div class="input-group">
-            <label for="name">Name</label>
-            <input type="text" name="name" id="name" value="{{ user.username }}" required aria-label="Your full name">
+            <label for="name">Full Name</label>
+            <input type="text" name="name" id="name" value="{{ user.username }}" required aria-label="Full name">
         </div>
 
         <div class="input-group">
-            <label for="phone">Phone</label>
-            <input type="text" name="phone" id="phone" value="{{ user.phone }}" required aria-label="Your phone number" pattern="^\+?[1-9]\d{1,14}$" title="Enter a valid phone number.">
+            <label for="phone">Phone Number</label>
+            <input type="text" name="phone" id="phone" value="{{ user.phone }}" required pattern="^\+?[1-9]\d{1,14}$" title="Enter a valid phone number">
         </div>
 
         <div class="input-group">
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" value="{{ user.email }}" required aria-label="Your email address" readonly>
-            <small id="emailHelp" class="form-text text-muted">Your email cannot be changed.</small>
+            <label for="email">Email Address</label>
+            <input type="email" name="email" id="email" value="{{ user.email }}" readonly>
+            <small>Email cannot be changed.</small>
         </div>
 
-        <button type="submit" class="btn btn-primary">Update Profile</button>
+        <button type="submit" class="btn-submit">Save Changes</button>
     </form>
 </div>
 
 <style>
-    /* General page styling */
     body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f4f6f9;
-        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #eef1f6;
         margin: 0;
         padding: 0;
     }
 
     .profile-container {
-        width: 100%;
-        max-width: 600px;
-        margin: 50px auto;
-        padding: 40px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 550px;
+        margin: 60px auto;
+        background: #fff;
+        padding: 40px 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        transition: 0.3s ease;
     }
 
     .profile-container h2 {
+        text-align: center;
         font-size: 1.8rem;
         color: #333;
-        text-align: center;
         margin-bottom: 30px;
     }
 
     .input-group {
-        margin-bottom: 20px;
+        margin-bottom: 25px;
     }
 
     .input-group label {
-        font-size: 1rem;
-        color: #555;
-        margin-bottom: 5px;
         display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #444;
     }
 
     .input-group input {
         width: 100%;
         padding: 12px;
         font-size: 1rem;
-        color: #333;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        transition: border-color 0.3s ease;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #fdfdfd;
+        transition: border 0.3s ease, box-shadow 0.3s ease;
     }
 
     .input-group input:focus {
+        border-color: #3f89f8;
+        box-shadow: 0 0 5px rgba(63, 137, 248, 0.3);
         outline: none;
-        border-color: #007bff;
     }
 
     .input-group small {
-        font-size: 0.8rem;
-        color: #6c757d;
-        margin-top: 5px;
+        display: block;
+        margin-top: 6px;
+        font-size: 0.85rem;
+        color: #777;
     }
 
-    .btn {
+    .btn-submit {
+        display: block;
         width: 100%;
-        padding: 12px;
-        background-color: #007bff;
-        color: white;
+        padding: 14px;
+        background-color: #3f89f8;
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: bold;
         border: none;
-        border-radius: 5px;
-        font-size: 1.2rem;
+        border-radius: 10px;
         cursor: pointer;
         transition: background-color 0.3s ease;
     }
 
-    .btn:hover {
-        background-color: #0056b3;
+    .btn-submit:hover {
+        background-color: #256de0;
     }
 
-    /* Mobile responsiveness */
-    @media screen and (max-width: 600px) {
+    @media (max-width: 600px) {
         .profile-container {
-            padding: 30px;
+            margin: 20px;
+            padding: 30px 20px;
         }
 
         .profile-container h2 {
             font-size: 1.5rem;
         }
 
-        .profile-container label, .profile-container input, .profile-container button {
-            font-size: 0.9rem;
+        .btn-submit {
+            font-size: 1rem;
+            padding: 12px;
         }
     }
 </style>

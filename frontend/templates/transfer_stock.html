@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transfer Stock</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      display: flex;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 0 10px rgba(0,255,255,0.1);
+    }
+
+    .sidebar h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00ffe1;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 0 10px #00ffe1;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 10px 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #00ffe1;
+      transition: background 0.3s;
+    }
+
+    .sidebar ul li:hover {
+      background: rgba(0, 255, 255, 0.2);
+      cursor: default;
+    }
+
+    .container {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .form-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 0 20px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: fadeIn 1s ease;
+    }
+
+    h4 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-family: 'Orbitron', sans-serif;
+      color: #00ffe1;
+      text-shadow: 0 0 10px #00ffe1;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #00ffe1;
+      font-weight: bold;
+      outline: none;
+    }
+
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 10px #00ffe1;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #00ffe1;
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+
+    .btn:hover {
+      background: #00c9b7;
+      box-shadow: 0 0 15px #00ffe1, 0 0 30px #00c9b7;
+      transform: scale(1.02);
+    }
+
+    .back-button {
+      display: block;
+      margin-top: 25px;
+      text-align: center;
+      text-decoration: none;
+      color: #00ffe1;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      text-shadow: 0 0 10px #00ffe1;
+      transform: scale(1.05);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Sidebar with bartender list -->
+  <div class="sidebar">
+    <h3>Bartenders</h3>
+    <ul>
+      {% for bartender in bartenders %}
+        <li>{{ bartender.username }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Main Transfer Form -->
+  <div class="container">
+    <div class="form-box">
+      <h4>Transfer Stock to Another Bartender</h4>
+      <form method="POST">
+        <div class="form-group">
+          <label for="to_bartender_id">Select Bartender:</label>
+          <select class="form-control" name="to_bartender_id" required>
+            {% for bartender in bartenders %}
+              {% if bartender.id != session['user_id'] %}
+                <option value="{{ bartender.id }}">{{ bartender.username }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        {% for stock in my_stock %}
+          <div class="form-group">
+            <label>{{ stock.beer.name }} (Available: {{ stock.quantity }})</label>
+            <input type="number" class="form-control" name="quantity_{{ stock.id }}" min="0" max="{{ stock.quantity }}">
+          </div>
+        {% endfor %}
+
+        <button type="submit" class="btn">Transfer Stock</button>
+      </form>
+      <a href="{{ url_for('main.bartender_dashboard') }}" class="back-button">← Back to Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

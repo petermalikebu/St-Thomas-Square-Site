@@ -32,7 +32,7 @@ from backend.models import BeerStock, OpenStockModel
 from backend.models import Event
 from backend.models import Room, SalesTransaction
 from backend.models import User, db  # Import models and db from the correct location
-from .models import StockMovement, Food, ClosedStock, SoldFood
+from .models import StockMovement, Food, ClosedStock, SoldFood, ShiftHandover
 
 main = Blueprint('main', __name__)
 report_dir = os.path.join(os.getcwd(), 'reports')
@@ -216,12 +216,12 @@ def generate_bartender_report():
 
 @main.route('/')
 def home():
-    return render_template('st_thomas.html')
+    return render_template('base.html')
 
 # Routes
-@main.route('/base')
+@main.route('/st_thomas')
 def index():
-    return render_template('base.html')
+    return render_template('st_thomas.html')
 
 
 @main.route('/booking')
@@ -343,17 +343,26 @@ def dashboard():
     # Calculate the total quantity of beer remaining
     beer_remaining = sum(beer.quantity for beer in beers)
 
-    # Optionally, you could also calculate the total value of the beer stock
+    # Calculate the total value of the beer stock
     total_stock_value = sum(beer.total_value for beer in beers)
 
     # Fetch other data for the dashboard (events, rooms available, etc.)
     events = get_all_events()
     rooms_available = get_rooms_available()
 
-    # Pass all necessary data to the template
-    return render_template('dashboard.html', events=events, rooms_available=rooms_available, beers=beers,
-                           beer_remaining=beer_remaining, total_stock_value=total_stock_value)
+    # Get user email from session
+    user_email = session.get('email', 'Admin')
 
+    # Pass all necessary data to the template
+    return render_template(
+        'dashboard.html',
+        events=events,
+        rooms_available=rooms_available,
+        beers=beers,
+        beer_remaining=beer_remaining,
+        total_stock_value=total_stock_value,
+        user_email=user_email
+    )
 
 
 @main.route('/add_user', methods=['POST'])
@@ -634,20 +643,22 @@ def bartender_dashboard():
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    # Retrieve current bar stock
+    # Retrieve necessary data
     beers = BeerStock.query.all()
     open_stocks = OpenStockModel.query.all()
-
-    # Retrieve bartender's specific stock
     bartender_stocks = BartenderStock.query.filter_by(
         bartender_id=session.get('user_id')
+    ).all()
+    pending_handovers = ShiftHandover.query.filter_by(
+        to_bartender_id=session.get('user_id'), accepted=False
     ).all()
 
     return render_template(
         'bartender_dashboard.html',
         beers=beers,
         open_stocks=open_stocks,
-        bartender_stocks=bartender_stocks
+        bartender_stocks=bartender_stocks,
+        pending_handovers=pending_handovers
     )
 
 
@@ -829,6 +840,76 @@ def view_closed_stock():
 def total_sales():
     total_sales = db.session.query(db.func.sum(SalesTransaction.total_price)).scalar()
     return render_template('total_sales.html', total_sales=total_sales)
+
+
+@main.route('/bartender/transfer-stock', methods=['GET', 'POST'])
+@login_required
+def transfer_stock():
+    if session.get('user_role') != 'bartender':
+        flash('Access denied!', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    all_bartenders = User.query.filter_by(role='bartender').all()
+    my_stock = BartenderStock.query.filter_by(bartender_id=session['user_id']).all()
+
+    if request.method == 'POST':
+        to_bartender_id = int(request.form['to_bartender_id'])
+        for stock in my_stock:
+            quantity = int(request.form.get(f'quantity_{stock.id}', 0))
+            if quantity > 0 and quantity <= stock.quantity:
+                handover = ShiftHandover(
+                    from_bartender_id=session['user_id'],
+                    to_bartender_id=to_bartender_id,
+                    beer_id=stock.beer_id,
+                    quantity=quantity,
+                    price_per_bottle=stock.price_per_bottle,
+                    total_value=stock.price_per_bottle * quantity
+                )
+                stock.quantity -= quantity
+                stock.total_value -= stock.price_per_bottle * quantity
+                db.session.add(handover)
+        db.session.commit()
+        flash("Stock successfully transferred!", "success")
+        return redirect(url_for('main.bartender_dashboard'))
+
+    return render_template("transfer_stock.html", bartenders=all_bartenders, my_stock=my_stock)
+
+@main.route('/bartender/accept-handover', methods=['POST'])
+@login_required
+def accept_handover():
+    if session.get('user_role') != 'bartender':
+        flash('Access denied!', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    handovers = ShiftHandover.query.filter_by(to_bartender_id=session['user_id'], accepted=False).all()
+
+    for handover in handovers:
+        # Add to bartender stock or update existing
+        existing = BartenderStock.query.filter_by(
+            bartender_id=session['user_id'], beer_id=handover.beer_id
+        ).first()
+
+        if existing:
+            existing.quantity += handover.quantity
+            existing.total_value += handover.total_value
+        else:
+            new_stock = BartenderStock(
+                bartender_id=session['user_id'],
+                beer_id=handover.beer_id,
+                quantity=handover.quantity,
+                price_per_bottle=handover.price_per_bottle,
+                total_value=handover.total_value
+            )
+            db.session.add(new_stock)
+
+        handover.accepted = True
+
+    db.session.commit()
+    flash("Handover accepted. Stock added to your inventory.", "success")
+    return redirect(url_for('main.bartender_dashboard'))
+
+
+
 
 
 

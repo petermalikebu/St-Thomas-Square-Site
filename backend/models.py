@@ -301,8 +301,11 @@ class ActivityLog(db.Model):
     def __repr__(self):
         return f"<ActivityLog {self.activity_type} at {self.timestamp}>"
 
+
 class SoldFood(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = 'sold_food'  # Added for consistency
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     food_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     total_amount = db.Column(db.Float, nullable=False)
@@ -310,3 +313,27 @@ class SoldFood(db.Model):
 
     def __repr__(self):
         return f"<SoldFood {self.food_name} - {self.quantity}>"
+
+
+class ShiftHandover(db.Model):
+    __tablename__ = 'shift_handover'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    from_bartender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    to_bartender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    beer_id = db.Column(db.Integer, db.ForeignKey('beer_stock.id'), nullable=False)
+
+    quantity = db.Column(db.Integer, nullable=False)
+    price_per_bottle = db.Column(db.Float, nullable=False)
+    total_value = db.Column(db.Float, nullable=False)
+    handover_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    accepted = db.Column(db.Boolean, default=False)
+
+    from_bartender = db.relationship('User', foreign_keys=[from_bartender_id], backref='handovers_given')
+    to_bartender = db.relationship('User', foreign_keys=[to_bartender_id], backref='handovers_received')
+    beer = db.relationship('BeerStock', backref='shift_handovers')  # Adjust to match actual model class
+
+    def __repr__(self):
+        return (f"<ShiftHandover from User {self.from_bartender_id} to User {self.to_bartender_id}, "
+                f"Beer ID {self.beer_id}, Qty {self.quantity}, Total {self.total_value}>")

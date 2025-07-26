@@ -4,68 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Closed Sales Transactions</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background-color: #f8f9fa;
-            transition: background 0.5s, color 0.5s;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #ffffff;
+            font-family: 'Roboto', sans-serif;
+        }
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00f2fe;
+            text-shadow: 0 0 10px #00f2fe;
         }
         table {
-            width: 100%;
             margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            color: #fff;
         }
         th, td {
             text-align: center;
             padding: 10px;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: rgba(0,255,255,0.1);
         }
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: rgba(255, 255, 255, 0.02);
         }
         tr:hover {
-            background-color: #d4edda;
+            background-color: rgba(0, 255, 255, 0.1);
             transition: 0.3s;
         }
         .status-success {
-            color: green;
+            color: #00ff88;
             font-weight: bold;
         }
         .status-failed {
-            color: red;
+            color: #ff4d4d;
             font-weight: bold;
-        }
-        .logo {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 20px 0;
-            transition: transform 0.3s ease-in-out;
         }
         .logo img {
             max-width: 200px;
-            height: auto;
             transition: transform 0.3s ease-in-out;
         }
         .logo img:hover {
             transform: scale(1.1);
         }
+        .btn-custom {
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            border: none;
+            color: #000;
+            font-weight: bold;
+        }
+        .btn-custom:hover {
+            transform: scale(1.05);
+        }
+        canvas {
+            background-color: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
 <div class="container mt-5">
-    <div class="logo">
+    <div class="text-center logo mb-4">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="St. Thomas Square Logo">
     </div>
-    <h2 class="text-center">Closed Sales Transactions</h2>
+    <h2 class="text-center mb-4">Closed Sales Transactions</h2>
 
     <!-- Search Bar -->
     <div class="input-group mb-3">
         <input type="text" id="searchBox" class="form-control" placeholder="Search transactions...">
         <div class="input-group-append">
-            <button class="btn btn-primary" onclick="filterTable()">Search</button>
+            <button class="btn btn-custom" onclick="filterTable()">Search</button>
         </div>
     </div>
 
@@ -73,7 +88,7 @@
     <div class="d-flex justify-content-between mb-3">
         <input type="date" id="startDate" class="form-control w-25">
         <input type="date" id="endDate" class="form-control w-25">
-        <button class="btn btn-info" onclick="filterDate()">Filter</button>
+        <button class="btn btn-custom" onclick="filterDate()">Filter</button>
     </div>
 
     <!-- Export Buttons -->
@@ -83,7 +98,7 @@
     </div>
 
     <!-- Sales Summary -->
-    <h5 class="text-success">Total Sales: $<span id="totalSales">0</span></h5>
+    <h5 class="text-success">Total Sales: MWK <span id="totalSales">0</span></h5>
 
     {% if sales_transactions %}
     <table class="table table-bordered">
@@ -102,8 +117,8 @@
             <tr>
                 <td>{{ transaction.beer_name }}</td>
                 <td>{{ transaction.quantity_sold }}</td>
-                <td>MWK {{ "{:,.2f}".format(transaction.total_price) }}</td>
-                <td>MWK {{ "{:,.2f}".format(transaction.cash_in_hand) }}</td>
+                <td>{{ "{:,.2f}".format(transaction.total_price) }}</td>
+                <td>{{ "{:,.2f}".format(transaction.cash_in_hand) }}</td>
                 <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                 <td class="{% if transaction.total_price > 0 %}status-success{% else %}status-failed{% endif %}">
                     {% if transaction.total_price > 0 %}Success{% else %}Failed{% endif %}
@@ -126,7 +141,8 @@
 <script>
     // Dark Mode Toggle
     function toggleDarkMode() {
-        document.body.classList.toggle("dark-mode");
+        document.body.classList.toggle("bg-dark");
+        document.body.classList.toggle("text-light");
     }
 
     // Search Transactions
@@ -155,9 +171,9 @@
     // Update Total Sales
     let total = 0;
     document.querySelectorAll("#transactionTable tr td:nth-child(3)").forEach(cell => {
-        total += parseFloat(cell.innerText.replace("$", ""));
+        total += parseFloat(cell.innerText.replace(/[^\d.-]+/g, ""));
     });
-    document.getElementById("totalSales").innerText = total.toFixed(2);
+    document.getElementById("totalSales").innerText = total.toLocaleString(undefined, { minimumFractionDigits: 2 });
 
     // Sales Chart
     const ctx = document.getElementById('salesChart').getContext('2d');
@@ -166,7 +182,7 @@
         data: {
             labels: [{% for transaction in sales_transactions %} "{{ transaction.transaction_date.strftime('%Y-%m-%d') }}", {% endfor %}],
             datasets: [{
-                label: 'Sales Amount ($)',
+                label: 'Sales Amount (MWK)',
                 data: [{% for transaction in sales_transactions %} {{ transaction.total_price }}, {% endfor %}],
                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
                 borderColor: 'rgba(54, 162, 235, 1)',
@@ -184,7 +200,6 @@
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
