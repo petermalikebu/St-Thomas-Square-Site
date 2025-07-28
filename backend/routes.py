@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from functools import wraps
 from random import choice
+import pdfkit
 
 import matplotlib
 
@@ -729,8 +730,8 @@ def record_sales():
         flash('Invalid sale details. Please check your inputs.', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
-    bartender_stock = BartenderStock.query.filter_by(bartender_id=session.get('user_id'), beer_id=beer_id).first()
-
+    bartender_stock = BartenderStock.query.filter_by(
+        bartender_id=session.get('user_id'), beer_id=beer_id).first()
     if not bartender_stock:
         flash('Beer not found in your stock!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
@@ -744,26 +745,35 @@ def record_sales():
         flash('Beer not found in the database!', 'danger')
         return redirect(url_for('main.bartender_dashboard'))
 
+    # Calculate total price
     total_price = beer.price_per_bottle * quantity_sold
-    if cash_in_hand < total_price:
-        flash('Insufficient cash in hand!', 'danger')
-        return redirect(url_for('main.bartender_dashboard'))
+
+    # Calculate profit/loss
+    difference = cash_in_hand - total_price
+    if difference > 0:
+        status = 'Profit'
+    elif difference < 0:
+        status = 'Loss'
+    else:
+        status = 'Exact'
 
     try:
+        # Update bartender stock
         bartender_stock.quantity -= quantity_sold
         bartender_stock.total_value -= total_price
-        db.session.commit()
 
+        # Record sale
         new_transaction = SalesTransaction(
             bartender_id=session.get('user_id'),
             beer_id=beer_id,
             quantity_sold=quantity_sold,
             total_price=total_price,
             cash_in_hand=cash_in_hand,
-            transaction_date=datetime.utcnow()
+            transaction_date=datetime.utcnow(),
+            status=status,
+            difference=difference
         )
         db.session.add(new_transaction)
-
         db.session.commit()
 
         flash('Sale recorded successfully!', 'success')
@@ -772,7 +782,6 @@ def record_sales():
         flash(f'Database error: {str(e)}', 'danger')
 
     return redirect(url_for('main.bartender_dashboard'))
-
 
 
 @main.route('/submit_sale', methods=['POST'])
@@ -792,34 +801,46 @@ def submit_sale():
             return redirect(url_for('sales_page'))
 
         total_price = beer.price_per_bottle * quantity_sold
+        cash_in_hand = total_price  # Fixed for automatic sale
+        difference = 0
+        status = 'Exact'
 
-        new_sale = SalesTransaction(
-            bartender_id=bartender_id,
-            beer_id=beer_id,
-            quantity_sold=quantity_sold,
-            total_price=total_price,
-            cash_in_hand=total_price  # Use the total price for the cash_in_hand
-        )
-        db.session.add(new_sale)
-
-        beer.quantity -= quantity_sold
-        beer.total_value = beer.quantity * beer.price_per_bottle
-
-        closed_stock = ClosedStock.query.filter_by(beer_id=beer_id).first()
-        if closed_stock:
-            closed_stock.quantity += quantity_sold
-            closed_stock.total_value += total_price
-        else:
-            closed_stock = ClosedStock(
+        try:
+            # Record sale
+            new_sale = SalesTransaction(
+                bartender_id=bartender_id,
                 beer_id=beer_id,
-                quantity=quantity_sold,
-                total_value=total_price
+                quantity_sold=quantity_sold,
+                total_price=total_price,
+                cash_in_hand=cash_in_hand,
+                status=status,
+                difference=difference
             )
-            db.session.add(closed_stock)
+            db.session.add(new_sale)
 
-        db.session.commit()
+            # Update beer stock
+            beer.quantity -= quantity_sold
+            beer.total_value = beer.quantity * beer.price_per_bottle
 
-        flash("Sale recorded successfully!", "success")
+            # Update closed stock
+            closed_stock = ClosedStock.query.filter_by(beer_id=beer_id).first()
+            if closed_stock:
+                closed_stock.quantity += quantity_sold
+                closed_stock.total_value += total_price
+            else:
+                closed_stock = ClosedStock(
+                    beer_id=beer_id,
+                    quantity=quantity_sold,
+                    total_value=total_price
+                )
+                db.session.add(closed_stock)
+
+            db.session.commit()
+            flash("Sale recorded successfully!", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Database error: {str(e)}", "danger")
+
         return redirect(url_for('view_closed_stock'))
 
 
@@ -941,7 +962,7 @@ def download_bartender_report():
         return redirect(url_for('main.bartender_dashboard'))
 
     print(f"Bartender report ready for download: {report_path}")  # Debugging step
-    return send_file(report_path, as_attachment=True, download_name="bartender_report.pdf")
+    return send_file(r/eport_path, as_attachment=True, download_name="bartender_report.pdf")
 
 
 

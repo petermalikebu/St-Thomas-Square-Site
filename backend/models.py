@@ -244,6 +244,8 @@ class SalesTransaction(db.Model):
     total_price = db.Column(db.Float, nullable=False)
     cash_in_hand = db.Column(db.Float, nullable=False)  # Added this field for consistency
     transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(10))  # 'Profit', 'Loss', 'Exact'
+    difference = db.Column(db.Float)  # +/- cash difference
 
     bartender = db.relationship('User', backref='sales_transactions')
     beer = db.relationship('BeerStock', backref='sales_transactions')

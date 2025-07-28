@@ -13,7 +13,6 @@
       font-family: 'Orbitron', sans-serif;
       background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
       color: #f0f0f0;
-      transition: background 0.3s ease, color 0.3s ease;
     }
 
     .dark-mode {
@@ -24,7 +23,6 @@
     .logo {
       display: flex;
       justify-content: center;
-      align-items: center;
       margin: 20px 0;
     }
 
@@ -66,7 +64,6 @@
 
     table tr:hover {
       background-color: rgba(0, 229, 255, 0.1);
-      transition: 0.3s;
     }
 
     .status-success {
@@ -93,15 +90,6 @@
       background: #1f1f1f;
       border-radius: 10px;
       padding: 10px;
-    }
-
-    .dark-mode table tr:hover {
-      background-color: #1b1b1b !important;
-    }
-
-    .dark-mode .btn-dark {
-      background-color: #222;
-      border-color: #333;
     }
   </style>
 </head>
@@ -141,8 +129,10 @@
           <th>📦 Quantity</th>
           <th>💰 Total Price</th>
           <th>💵 Cash in Hand</th>
+          <th>📉 Difference</th>
           <th>📅 Date</th>
           <th>✅ Status</th>
+          <th>📊 Type</th>
         </tr>
       </thead>
       <tbody>
@@ -152,17 +142,40 @@
           <td>{{ transaction.quantity_sold }}</td>
           <td>{{ "{:,.2f}".format(transaction.total_price) }}</td>
           <td>{{ "{:,.2f}".format(transaction.cash_in_hand) }}</td>
-          <td>{{ transaction.transaction_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ "{:,.2f}".format(transaction.difference or 0) }}</td>
+          <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
           <td class="{% if transaction.total_price > 0 %}status-success{% else %}status-failed{% endif %}">
             {% if transaction.total_price > 0 %}Success{% else %}Failed{% endif %}
+          </td>
+          <td>
+            <span class="{% if transaction.status == 'Profit' %}text-success
+                          {% elif transaction.status == 'Loss' %}text-danger
+                          {% else %}text-warning{% endif %}">
+              {{ transaction.status }}
+            </span>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+
+    <div class="d-flex justify-content-around text-center my-4">
+      <div class="text-success">
+        <h5>💸 Profit</h5>
+        <p>{{ sales_transactions | selectattr('status', 'equalto', 'Profit') | list | length }}</p>
+      </div>
+      <div class="text-danger">
+        <h5>📉 Loss</h5>
+        <p>{{ sales_transactions | selectattr('status', 'equalto', 'Loss') | list | length }}</p>
+      </div>
+      <div class="text-warning">
+        <h5>⚖️ Exact</h5>
+        <p>{{ sales_transactions | selectattr('status', 'equalto', 'Exact') | list | length }}</p>
+      </div>
+    </div>
   </div>
   {% else %}
-  <p class="text-center text-danger">No sales transactions found.</p>
+    <p class="text-center text-danger">No sales transactions found.</p>
   {% endif %}
 
   <canvas id="salesChart" height="100"></canvas>
@@ -190,19 +203,21 @@
     const start = new Date(document.getElementById("startDate").value);
     const end = new Date(document.getElementById("endDate").value);
     const rows = document.querySelectorAll("#transactionTable tbody tr");
+
     rows.forEach(row => {
-      const dateText = row.cells[4].innerText;
+      const dateText = row.cells[5].innerText;  // date is in 6th column (index 5)
       const date = new Date(dateText);
       row.style.display = (date >= start && date <= end) ? "" : "none";
     });
   }
 
   function exportCSV() {
-    let csv = "Beer,Quantity,Total Price,Cash in Hand,Date,Status\n";
+    let csv = "Beer,Quantity,Total Price,Cash in Hand,Difference,Date,Status,Type\n";
     document.querySelectorAll("#transactionTable tbody tr").forEach(row => {
-      const cells = [...row.children].map(td => td.innerText);
+      const cells = [...row.children].map(td => td.innerText.replace(/,/g, ""));
       csv += cells.join(",") + "\n";
     });
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -210,12 +225,14 @@
     link.click();
   }
 
+  // Total sales calculator
   let total = 0;
   document.querySelectorAll("#transactionTable tbody tr td:nth-child(3)").forEach(cell => {
     total += parseFloat(cell.innerText.replace(/[^0-9.-]+/g, ""));
   });
   document.getElementById("totalSales").innerText = total.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
+  // Sales Chart
   const ctx = document.getElementById('salesChart').getContext('2d');
   new Chart(ctx, {
     type: 'line',
