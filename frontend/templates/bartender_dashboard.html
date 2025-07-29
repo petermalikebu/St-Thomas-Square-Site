@@ -308,13 +308,20 @@
   </div>
 
   {% if pending_handovers %}
-  <div class="alert alert-info">
-    <p>You have {{ pending_handovers|length }} pending stock transfers.</p>
+    <h4>🍺 Pending Handovers</h4>
     <form action="{{ url_for('main.accept_handover') }}" method="POST">
-      <button type="submit" class="btn btn-success">Accept Stock Handover</button>
+      <ul>
+        {% for handover in pending_handovers %}
+          <li>
+            {{ handover.quantity }} of <strong>{{ handover.beer.name }}</strong> from <em>{{ handover.from_bartender.username }}</em>
+          </li>
+        {% endfor %}
+      </ul>
+      <button type="submit" class="btn btn-success">✅ Accept All</button>
     </form>
-  </div>
-{% endif %}
+  {% endif %}
+
+
 
 
   <!-- Scripts -->

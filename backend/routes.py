@@ -594,9 +594,8 @@ def place_order():
 @main.route('/admin_dashboard')
 @login_required
 def admin_dashboard():
-    # Retrieve all beer stock data from the database
     beers = BeerStock.query.all()
-    transactions = BartenderTransaction.query.all()
+    transactions = SalesTransaction.query.all()
     return render_template("admin_dashboard.html", beers=beers, transactions=transactions)
 
 
@@ -604,37 +603,38 @@ def admin_dashboard():
 @login_required
 def admin_bar_stock():
     if request.method == 'POST':
-        # Retrieve form data
-        beer_name = request.form['name']
-        beer_type = request.form['type']
-        price_per_bottle = float(request.form['price_per_bottle'])
-        quantity = int(request.form['quantity'])
+        try:
+            beer_name = request.form['name']
+            beer_type = request.form['type']
+            price_per_bottle = float(request.form['price_per_bottle'])
+            quantity = int(request.form['quantity'])
 
-        # Calculate total value
-        total_value = price_per_bottle * quantity
+            total_value = price_per_bottle * quantity
 
-        # Create a new BeerStock instance and add it to the database
-        new_beer = BeerStock(
-            name=beer_name,
-            beer_type=beer_type,
-            price_per_bottle=price_per_bottle,
-            quantity=quantity,
-            total_value=total_value
-        )
-        db.session.add(new_beer)
-        db.session.commit()
-
-        flash('Beer stock added successfully!', 'success')
+            new_beer = BeerStock(
+                name=beer_name,
+                beer_type=beer_type,
+                price_per_bottle=price_per_bottle,
+                quantity=quantity,
+                total_value=total_value
+            )
+            db.session.add(new_beer)
+            db.session.commit()
+            flash('Beer stock added successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding beer stock: {e}', 'error')
         return redirect(url_for('main.admin_dashboard'))
 
     return render_template('admin_bar_stock.html')
 
+
 @main.route('/admin_report', methods=['GET'])
 @login_required
 def admin_report():
-    # Retrieve all sales transactions from the database
-    sales_transactions = SalesTransaction.query.all()  # Assuming SalesTransaction is the model for sales transactions
+    sales_transactions = SalesTransaction.query.all()
     return render_template('admin_report.html', sales_transactions=sales_transactions)
+
 
 
 @main.route('/bartender_dashboard')
@@ -644,23 +644,31 @@ def bartender_dashboard():
         flash('Access denied!', 'error')
         return redirect(url_for('main.dashboard'))
 
-    # Retrieve necessary data
-    beers = BeerStock.query.all()
-    open_stocks = OpenStockModel.query.all()
-    bartender_stocks = BartenderStock.query.filter_by(
-        bartender_id=session.get('user_id')
-    ).all()
-    pending_handovers = ShiftHandover.query.filter_by(
-        to_bartender_id=session.get('user_id'), accepted=False
-    ).all()
+    try:
+        # Load all necessary data
+        beers = BeerStock.query.all()
+        open_stocks = OpenStockModel.query.all()
+        bartender_id = session.get('user_id')
 
-    return render_template(
-        'bartender_dashboard.html',
-        beers=beers,
-        open_stocks=open_stocks,
-        bartender_stocks=bartender_stocks,
-        pending_handovers=pending_handovers
-    )
+        bartender_stocks = BartenderStock.query.filter_by(
+            bartender_id=bartender_id
+        ).all()
+
+        pending_handovers = ShiftHandover.query.filter_by(
+            to_bartender_id=bartender_id, accepted=False
+        ).all()
+
+        return render_template(
+            'bartender_dashboard.html',
+            beers=beers,
+            open_stocks=open_stocks,
+            bartender_stocks=bartender_stocks,
+            pending_handovers=pending_handovers
+        )
+
+    except Exception as e:
+        flash(f"Error loading dashboard: {str(e)}", "danger")
+        return redirect(url_for('main.dashboard'))
 
 
 @main.route('/bartender/select-beer', methods=['POST'])
@@ -875,6 +883,8 @@ def transfer_stock():
 
     if request.method == 'POST':
         to_bartender_id = int(request.form['to_bartender_id'])
+        transferred_any = False
+
         for stock in my_stock:
             quantity = int(request.form.get(f'quantity_{stock.id}', 0))
             if quantity > 0 and quantity <= stock.quantity:
@@ -889,11 +899,18 @@ def transfer_stock():
                 stock.quantity -= quantity
                 stock.total_value -= stock.price_per_bottle * quantity
                 db.session.add(handover)
+                transferred_any = True
+
+        if not transferred_any:
+            flash("Please enter a valid quantity for at least one item.", "warning")
+            return redirect(url_for('main.transfer_stock'))
+
         db.session.commit()
         flash("Stock successfully transferred!", "success")
         return redirect(url_for('main.bartender_dashboard'))
 
     return render_template("transfer_stock.html", bartenders=all_bartenders, my_stock=my_stock)
+
 
 @main.route('/bartender/accept-handover', methods=['POST'])
 @login_required

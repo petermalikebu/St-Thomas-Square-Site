@@ -242,18 +242,17 @@ class SalesTransaction(db.Model):
     beer_id = db.Column(db.Integer, db.ForeignKey('beer_stock.id'), nullable=False)
     quantity_sold = db.Column(db.Integer, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
-    cash_in_hand = db.Column(db.Float, nullable=False)  # Added this field for consistency
+    cash_in_hand = db.Column(db.Float, nullable=False)
     transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(10))  # 'Profit', 'Loss', 'Exact'
-    difference = db.Column(db.Float)  # +/- cash difference
+    difference = db.Column(db.Float)   # +/- cash difference
 
-    bartender = db.relationship('User', backref='sales_transactions')
-    beer = db.relationship('BeerStock', backref='sales_transactions')
+    bartender = db.relationship('User', backref=db.backref('sales_transactions', lazy='dynamic'))
+    beer = db.relationship('BeerStock', backref=db.backref('sales_transactions', lazy='dynamic'))
 
     def __repr__(self):
-        return f"<SalesTransaction {self.quantity_sold} of {self.beer.name} for {self.total_price}>"
+        return f"<SalesTransaction {self.quantity_sold} of {self.beer_name} for {self.total_price}>"
 
-    # Adding a method to fetch the beer name
     @property
     def beer_name(self):
         return self.beer.name if self.beer else 'Unknown Beer'
